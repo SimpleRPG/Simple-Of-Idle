@@ -350,9 +350,14 @@ function saveState() {
     const lastSave = document.getElementById("lastSave");
     if (indicator) indicator.textContent = "保存済み";
     if (lastSave) lastSave.textContent = formatClock(state.lastSavedAt);
-  } catch {
+  } catch (error) {
     const indicator = document.getElementById("saveIndicator");
     if (indicator) indicator.textContent = "保存失敗";
+    window.SimpleIdleErrorHandler?.report(error, {
+      phase: "セーブ処理",
+      operation: "ゲーム状態の保存",
+      file: "game.js"
+    });
   }
 }
 
@@ -398,13 +403,24 @@ function importSaveFile(file) {
 
       alert("セーブデータを読み込みました。ゲームを再読み込みします。");
       location.reload();
-    } catch {
+    } catch (error) {
       alert("セーブデータを読み込めませんでした。Simple-Of-Idleのセーブファイルを選択してください。");
+      window.SimpleIdleErrorHandler?.report(error, {
+        phase: "セーブ処理",
+        operation: "セーブデータの読み込み",
+        file: "game.js"
+      });
     }
   };
 
   reader.onerror = () => {
-    alert("セーブファイルの読み込みに失敗しました。");
+    const error = new Error("セーブファイルの読み込みに失敗しました。");
+    alert(error.message);
+    window.SimpleIdleErrorHandler?.report(error, {
+      phase: "セーブ処理",
+      operation: "セーブファイルの読み込み",
+      file: "game.js"
+    });
   };
 
   reader.readAsText(file);
