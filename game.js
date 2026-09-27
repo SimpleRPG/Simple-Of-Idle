@@ -323,7 +323,12 @@ function loadState() {
 
     const legacy = localStorage.getItem(LEGACY_SAVE_KEY);
     return legacy ? migrateLegacy(JSON.parse(legacy)) : clone(DEFAULT_STATE);
-  } catch {
+  } catch (error) {
+    window.SimpleIdleErrorHandler?.report(error, {
+      phase: "セーブ処理",
+      operation: "保存データの読み込み・復元",
+      file: "game.js"
+    });
     return clone(DEFAULT_STATE);
   }
 }
