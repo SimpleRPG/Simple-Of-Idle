@@ -17,6 +17,14 @@
       <div class="save-state">
         <span id="saveIndicator">保存済み</span>
         <span id="lastSave">--</span>
+        <div class="save-tools">
+          <button id="manualSave" class="small-button">今すぐ保存</button>
+          <button id="exportSave" class="small-button">セーブ書き出し</button>
+          <button id="importSaveButton" class="small-button">セーブ読み込み</button>
+          <button id="resetSave" class="small-button">セーブリセット</button>
+          <button id="deleteLegacySave" class="small-button">旧v1削除</button>
+          <input id="importSave" type="file" accept=".json,application/json" hidden>
+        </div>
       </div>
     </header>
 
@@ -649,5 +657,10 @@
   <script src="phase5.js"></script>
   <script src="phase6.js"></script>
   <script src="phase7.js"></script>
+  <script>
+    document.getElementById("importSaveButton").addEventListener("click", () => {
+      document.getElementById("importSave").click();
+    });
+  </script>
 </body>
 </html>

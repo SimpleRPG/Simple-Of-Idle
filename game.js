@@ -1,4 +1,5 @@
 const SAVE_KEY = "simple-of-idle-save-v2";
+const SAVE_BACKUP_KEY = "simple-of-idle-save-v2-backup";
 const LEGACY_SAVE_KEY = "simple-of-idle-save-v1";
 const MAX_OFFLINE_SECONDS = 12 * 60 * 60;
 const TICK_MS = 1000;
@@ -177,6 +178,7 @@ const DEFAULT_STATE = {
   }
 };
 
+let recoveredFromBackup = false;
 let state = loadState();
 let lastTick = Date.now();
 let saveTimer = 0;
@@ -236,32 +238,87 @@ function migrateLegacy(saved) {
   };
 }
 
+function normalizeSavedState(saved) {
+  const merged = {
+    ...clone(DEFAULT_STATE),
+    ...saved,
+    base: {
+      ...clone(DEFAULT_STATE).base,
+      ...(saved.base || {}),
+      facilities: {
+        ...clone(DEFAULT_STATE).base.facilities,
+        ...(saved.base?.facilities || {})
+      }
+    }
+  };
+
+  merged.adventurers = Array.isArray(saved.adventurers)
+    ? saved.adventurers.map((item, index) => normalizeAdventurer(item, index + 1))
+    : clone(DEFAULT_STATE.adventurers);
+
+  if (!merged.adventurers.length) {
+    merged.adventurers = clone(DEFAULT_STATE.adventurers);
+  }
+
+  merged.selectedAdventurerId = merged.adventurers.some(
+    a => a.id === saved.selectedAdventurerId
+  )
+    ? saved.selectedAdventurerId
+    : merged.adventurers[0].id;
+
+  merged.version = 2;
+  return merged;
+}
+
+function parseSave(raw) {
+  if (!raw) return null;
+
+  const saved = JSON.parse(raw);
+
+  if (!saved || typeof saved !== "object" || Array.isArray(saved)) {
+    throw new Error("invalid save payload");
+  }
+
+  return normalizeSavedState(saved);
+}
+
 function loadState() {
   try {
     const current = localStorage.getItem(SAVE_KEY);
+
     if (current) {
-      const saved = JSON.parse(current);
-      const merged = {
-        ...clone(DEFAULT_STATE),
-        ...saved,
-        base: {
-          ...clone(DEFAULT_STATE).base,
-          ...(saved.base || {}),
-          facilities: {
-            ...clone(DEFAULT_STATE).base.facilities,
-            ...(saved.base?.facilities || {})
+      try {
+        const saved = parseSave(current);
+        if (saved) return saved;
+      } catch {
+        const backup = localStorage.getItem(SAVE_BACKUP_KEY);
+
+        if (backup) {
+          try {
+            const recovered = parseSave(backup);
+            if (recovered) {
+              recoveredFromBackup = true;
+              return recovered;
+            }
+          } catch {
+            // Continue to legacy/default fallback.
           }
         }
-      };
-      merged.adventurers = Array.isArray(saved.adventurers)
-        ? saved.adventurers.map((item, index) => normalizeAdventurer(item, index + 1))
-        : clone(DEFAULT_STATE.adventurers);
-      if (!merged.adventurers.length) merged.adventurers = clone(DEFAULT_STATE.adventurers);
-      merged.selectedAdventurerId = merged.adventurers.some(a => a.id === saved.selectedAdventurerId)
-        ? saved.selectedAdventurerId
-        : merged.adventurers[0].id;
-      merged.version = 2;
-      return merged;
+      }
+    }
+
+    const backup = localStorage.getItem(SAVE_BACKUP_KEY);
+
+    if (backup) {
+      try {
+        const recovered = parseSave(backup);
+        if (recovered) {
+          recoveredFromBackup = true;
+          return recovered;
+        }
+      } catch {
+        // Continue to legacy/default fallback.
+      }
     }
 
     const legacy = localStorage.getItem(LEGACY_SAVE_KEY);
@@ -273,11 +330,104 @@ function loadState() {
 
 function saveState() {
   state.lastSavedAt = Date.now();
-  localStorage.setItem(SAVE_KEY, JSON.stringify(state));
-  const indicator = document.getElementById("saveIndicator");
-  const lastSave = document.getElementById("lastSave");
-  if (indicator) indicator.textContent = "保存済み";
-  if (lastSave) lastSave.textContent = formatClock(state.lastSavedAt);
+  const serialized = JSON.stringify(state);
+
+  try {
+    const previous = localStorage.getItem(SAVE_KEY);
+
+    if (!recoveredFromBackup && previous) {
+      localStorage.setItem(SAVE_BACKUP_KEY, previous);
+    }
+
+    localStorage.setItem(SAVE_KEY, serialized);
+
+    if (recoveredFromBackup) {
+      localStorage.setItem(SAVE_BACKUP_KEY, serialized);
+      recoveredFromBackup = false;
+    }
+
+    const indicator = document.getElementById("saveIndicator");
+    const lastSave = document.getElementById("lastSave");
+    if (indicator) indicator.textContent = "保存済み";
+    if (lastSave) lastSave.textContent = formatClock(state.lastSavedAt);
+  } catch {
+    const indicator = document.getElementById("saveIndicator");
+    if (indicator) indicator.textContent = "保存失敗";
+  }
+}
+
+function exportSave() {
+  saveState();
+
+  const serialized = localStorage.getItem(SAVE_KEY);
+  if (!serialized) {
+    alert("現在のセーブデータを取得できませんでした。");
+    return;
+  }
+
+  const blob = new Blob([serialized], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = `simple-of-idle-save-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function importSaveFile(file) {
+  if (!file) return;
+
+  const reader = new FileReader();
+
+  reader.onload = () => {
+    try {
+      const imported = parseSave(String(reader.result || ""));
+
+      if (!imported) {
+        throw new Error("empty save");
+      }
+
+      const serialized = JSON.stringify(imported);
+
+      localStorage.setItem(SAVE_BACKUP_KEY, serialized);
+      localStorage.setItem(SAVE_KEY, serialized);
+      localStorage.removeItem(LEGACY_SAVE_KEY);
+
+      alert("セーブデータを読み込みました。ゲームを再読み込みします。");
+      location.reload();
+    } catch {
+      alert("セーブデータを読み込めませんでした。Simple-Of-Idleのセーブファイルを選択してください。");
+    }
+  };
+
+  reader.onerror = () => {
+    alert("セーブファイルの読み込みに失敗しました。");
+  };
+
+  reader.readAsText(file);
+}
+
+function resetSave() {
+  if (!confirm("現在のセーブデータを削除して、最初から開始します。よろしいですか？")) {
+    return;
+  }
+
+  localStorage.removeItem(SAVE_KEY);
+  localStorage.removeItem(SAVE_BACKUP_KEY);
+  localStorage.removeItem(LEGACY_SAVE_KEY);
+  location.reload();
+}
+
+function deleteLegacySave() {
+  if (!confirm("旧v1セーブデータを削除します。現在のv2セーブには影響しません。よろしいですか？")) {
+    return;
+  }
+
+  localStorage.removeItem(LEGACY_SAVE_KEY);
+  alert("旧v1セーブデータを削除しました。");
 }
 
 function formatClock(timestamp) {
@@ -1053,6 +1203,21 @@ document.addEventListener("click", event => {
 });
 
 document.getElementById("hireAdventurer").addEventListener("click", hireAdventurer);
+
+document.getElementById("manualSave").addEventListener("click", () => {
+  saveState();
+});
+
+document.getElementById("exportSave").addEventListener("click", exportSave);
+
+document.getElementById("importSave").addEventListener("change", event => {
+  importSaveFile(event.target.files?.[0]);
+  event.target.value = "";
+});
+
+document.getElementById("resetSave").addEventListener("click", resetSave);
+
+document.getElementById("deleteLegacySave").addEventListener("click", deleteLegacySave);
 
 document.getElementById("closeOffline").addEventListener("click", () => {
   document.getElementById("offlineModal").classList.add("hidden");
