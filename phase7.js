@@ -472,6 +472,40 @@ function phase7RefreshUnlocks() {
   });
 }
 
+function phase7ProcessOffline(seconds) {
+  phase7EnsureState();
+
+  const elapsed = Math.max(0, Number(seconds) || 0);
+  if (elapsed <= 0) return;
+
+  const world = state.phase7.selectedWorld;
+
+  const worldRewards = {
+    origin: [],
+    astral: [
+      ["starOre", 0.025]
+    ],
+    ether: [
+      ["etherDust", 0.02]
+    ],
+    infinity: [
+      ["infinityFragment", 0.012]
+    ]
+  };
+
+  const rewards = worldRewards[world] || [];
+
+  // 世界間自動化はPhase 7恒久効果として既存放置処理の報酬量へ反映する。
+  const automation =
+    state.phase7.completedResearch.includes("world-automation")
+      ? 1.25
+      : 1;
+
+  rewards.forEach(([resource, rate]) => {
+    phase7AddResource(resource, elapsed * rate * automation);
+  });
+}
+
 function phase7ResearchPoints() {
   return Number(state.phase4?.researchPoints) || 0;
 }
@@ -853,6 +887,30 @@ function phase7PatchStats() {
   window.__phase7StatsPatched = true;
 }
 
+function phase7PatchOfflineProcessing() {
+  if (typeof phase4ProcessOffline !== "function") return;
+  if (window.__phase7OfflinePatched) return;
+
+  const original = phase4ProcessOffline;
+
+  phase4ProcessOffline = function phase7OfflineWrapper() {
+    const now = Date.now();
+    const previous = Number(state.phase4?.lastProcessedAt) || now;
+    const elapsed = Math.min(
+      Math.max(0, (now - previous) / 1000),
+      12 * 60 * 60
+    );
+
+    original();
+
+    if (elapsed > 0) {
+      phase7ProcessOffline(elapsed);
+    }
+  };
+
+  window.__phase7OfflinePatched = true;
+}
+
 function phase7PatchResourceGain() {
   if (typeof phase3AddResource !== "function") return;
   if (window.__phase7ResourcePatched) return;
@@ -1164,6 +1222,7 @@ phase7IntegrateExistingSystems();
 phase7RefreshUnlocks();
 phase7PatchStats();
 phase7PatchResourceGain();
+phase7PatchOfflineProcessing();
 phase7Render();
 saveState();
 
