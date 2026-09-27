@@ -191,7 +191,11 @@ function normalizeAdventurer(adventurer, fallbackId) {
     name: adventurer?.name || `冒険者 ${fallbackId}`,
     level: Math.max(1, Number(adventurer?.level) || 1),
     xp: Math.max(0, Number(adventurer?.xp) || 0),
-    job: JOBS[adventurer?.job] ? adventurer.job : "adventurer",
+    // Phase 7職業はgame.jsより後に登録されるため、
+    // ロード時点では未知の職業IDも保持し、後段のPhase統合で正規化する。
+    job: typeof adventurer?.job === "string" && adventurer.job
+      ? adventurer.job
+      : "adventurer",
     skillPoints: Math.max(0, Number(adventurer?.skillPoints) || 0),
     skills: { power: 0, guard: 0, quick: 0, fortune: 0, ...(adventurer?.skills || {}) },
     tree: { ...(adventurer?.tree || {}) },

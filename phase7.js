@@ -340,6 +340,16 @@ function phase7IntegrateExistingSystems() {
     Object.entries(PHASE7_JOB_REGISTRY).forEach(([id, job]) => {
       JOBS[id] = JOBS[id] || { ...job };
     });
+
+    // game.jsのロード時点ではPhase 7職業が未登録のため、
+    // ここで保存済み職業IDを最終的に正規化する。
+    if (Array.isArray(state.adventurers)) {
+      state.adventurers.forEach(adventurer => {
+        if (!JOBS[adventurer.job]) {
+          adventurer.job = "adventurer";
+        }
+      });
+    }
   }
 
   // Phase 7素材を既存Phase 5素材図鑑へ接続する。
@@ -1150,6 +1160,7 @@ document.querySelectorAll(".tab").forEach(button => {
 });
 
 phase7EnsureState();
+phase7IntegrateExistingSystems();
 phase7RefreshUnlocks();
 phase7PatchStats();
 phase7PatchResourceGain();
