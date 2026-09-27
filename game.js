@@ -1207,27 +1207,42 @@ document.addEventListener("click", event => {
   if (!button) return;
 
   const action = button.dataset.action;
+  const execute = () => {
+    if (action === "select-adventurer") {
+      selectAdventurer(Number(button.dataset.adventurer));
+    } else if (action === "job") {
+      changeJob(selectedAdventurer().id, button.dataset.job);
+    } else if (action === "skill") {
+      learnSkill(selectedAdventurer().id, button.dataset.skill);
+    } else if (action === "tree") {
+      learnTreeNode(selectedAdventurer().id, button.dataset.node);
+    } else if (action === "facility") {
+      upgradeFacility(button.dataset.facility);
+    } else if (action === "enhance") {
+      enhanceEquipment(Number(button.dataset.adventurer), button.dataset.item);
+    }
+  };
+
+  window.SimpleIdleErrorHandler?.setRetry(null);
   window.SimpleIdleErrorHandler?.setContext({
     phase: "ゲーム操作",
     operation: action,
     file: "game.js"
   });
+  window.SimpleIdleErrorHandler?.setRetry(execute);
 
-  if (action === "select-adventurer") {
-    selectAdventurer(Number(button.dataset.adventurer));
-  } else if (action === "job") {
-    changeJob(selectedAdventurer().id, button.dataset.job);
-  } else if (action === "skill") {
-    learnSkill(selectedAdventurer().id, button.dataset.skill);
-  } else if (action === "tree") {
-    learnTreeNode(selectedAdventurer().id, button.dataset.node);
-  } else if (action === "facility") {
-    upgradeFacility(button.dataset.facility);
-  } else if (action === "enhance") {
-    enhanceEquipment(Number(button.dataset.adventurer), button.dataset.item);
+  try {
+    execute();
+    window.SimpleIdleErrorHandler?.clearContext();
+    window.SimpleIdleErrorHandler?.setRetry(null);
+  } catch (error) {
+    window.SimpleIdleErrorHandler?.report(error, {
+      phase: "ゲーム操作",
+      operation: action,
+      file: "game.js"
+    });
+    throw error;
   }
-
-  window.SimpleIdleErrorHandler?.clearContext();
 });
 
 document.getElementById("hireAdventurer").addEventListener("click", hireAdventurer);

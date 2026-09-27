@@ -1491,49 +1491,48 @@ document.addEventListener("click", event => {
 
   const action = button.dataset.phase7Action;
   const id = button.dataset.id;
+  const execute = () => {
+    if (action === "world") {
+      if (state.phase7.discoveredWorlds.includes(id)) {
+        state.phase7.selectedWorld = id;
+        addLog(`🌌 ${PHASE7_WORLDS.find(item => item.id === id)?.name || id} へ移動した。`);
+      }
+    }
+
+    if (action === "craft") phase7Craft(id);
+    if (action === "research") phase7StartResearch(id);
+    if (action === "dungeon") phase7ClearDungeon(id);
+    if (action === "boss") phase7DefeatBoss(id);
+    if (action === "prestige") phase7DoUpperPrestige();
+    if (action === "upper-node") phase7SpendUpperNode(id);
+
+    phase7RefreshUnlocks();
+    phase7RefreshCollections();
+    saveState();
+    render();
+    phase7Render();
+  };
+
+  window.SimpleIdleErrorHandler?.setRetry(null);
   window.SimpleIdleErrorHandler?.setContext({
     phase: "Phase 7",
     operation: action,
     file: "phase7.js"
   });
+  window.SimpleIdleErrorHandler?.setRetry(execute);
 
-  if (action === "world") {
-    if (state.phase7.discoveredWorlds.includes(id)) {
-      state.phase7.selectedWorld = id;
-      addLog(`🌌 ${PHASE7_WORLDS.find(item => item.id === id)?.name || id} へ移動した。`);
-    }
+  try {
+    execute();
+    window.SimpleIdleErrorHandler?.clearContext();
+    window.SimpleIdleErrorHandler?.setRetry(null);
+  } catch (error) {
+    window.SimpleIdleErrorHandler?.report(error, {
+      phase: "Phase 7",
+      operation: action,
+      file: "phase7.js"
+    });
+    throw error;
   }
-
-  if (action === "craft") {
-    phase7Craft(id);
-  }
-
-  if (action === "research") {
-    phase7StartResearch(id);
-  }
-
-  if (action === "dungeon") {
-    phase7ClearDungeon(id);
-  }
-
-  if (action === "boss") {
-    phase7DefeatBoss(id);
-  }
-
-  if (action === "prestige") {
-    phase7DoUpperPrestige();
-  }
-
-  if (action === "upper-node") {
-    phase7SpendUpperNode(id);
-  }
-
-  phase7RefreshUnlocks();
-  phase7RefreshCollections();
-  saveState();
-  render();
-  phase7Render();
-  window.SimpleIdleErrorHandler?.clearContext();
 });
 
 document.querySelectorAll(".tab").forEach(button => {

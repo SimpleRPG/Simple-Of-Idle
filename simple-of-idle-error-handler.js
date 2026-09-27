@@ -12,6 +12,7 @@
   let lastPayload = null;
   let lastKey = "";
   let lastAt = 0;
+  let retryAction = null;
 
   function screen() {
     const active = document.querySelector(".tab-panel.active, .tab-panel:not(.hidden)");
@@ -94,8 +95,17 @@
     modal.querySelector("[data-error-close]").onclick = hide;
 
     modal.querySelector("[data-error-retry]").onclick = () => {
+      const retry = retryAction;
       hide();
-      window.location.reload();
+      if (typeof retry !== "function") {
+        window.location.reload();
+        return;
+      }
+      try {
+        retry();
+      } catch (error) {
+        report(error, context);
+      }
     };
 
     modal.querySelector("[data-error-reload]").onclick = () => {
@@ -219,6 +229,10 @@
     };
   }
 
+  function setRetry(fn) {
+    retryAction = typeof fn === "function" ? fn : null;
+  }
+
   function clearContext() {
     context = {
       phase: "待機",
@@ -270,6 +284,7 @@
   window.SimpleIdleErrorHandler = {
     setContext,
     clearContext,
+    setRetry,
     run,
     report,
     show,
