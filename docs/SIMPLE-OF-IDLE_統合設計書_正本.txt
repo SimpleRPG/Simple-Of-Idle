@@ -1357,3 +1357,87 @@ Phase 7研究4件完了
 
 という一方向の進行を維持する。
 
+## 55. Phase 7ダンジョン・ボスの既存遠征処理統合
+
+Phase 7のダンジョン・ボスは、ボタン押下時に即時クリア・即時撃破してはならない。
+
+既存Phase 4の `state.phase4.activeActivity` と `phase4ProcessActivity()` を共通の進行基盤として利用する。
+
+### ダンジョン
+
+Phase 7ダンジョン開始
+↓
+既存 `state.phase4.activeActivity`
+↓
+`type = phase7-dungeon`
+↓
+既存 `phase4ProcessActivity()`
+↓
+Phase 7進行処理
+↓
+階層進行完了
+↓
+Phase 7踏破記録
+↓
+Phase 4ダンジョン記録
+↓
+既存Phase 3資源処理
+↓
+報酬・図鑑・コレクション
+
+### ボス
+
+Phase 7ボス挑戦
+↓
+既存 `state.phase4.activeActivity`
+↓
+`type = phase7-boss`
+↓
+既存 `phase4ProcessActivity()`
+↓
+Phase 7ボスHP進行
+↓
+撃破
+↓
+Phase 7撃破記録
+↓
+Phase 4ボス記録
+↓
+Phase 5モンスター図鑑・発見
+↓
+既存Phase 3資源処理
+↓
+報酬・コレクション
+
+### 進行計算
+
+Phase 7専用の別タイマーは作らない。
+
+進行時間は既存Phase 4のオンライン・オフライン処理から渡される秒数を使用する。
+
+ダンジョン進行は既存Phase 4ダンジョンと同じ `seconds / 5` 単位および戦力補正を使用する。
+
+ボス進行は既存Phase 4ボスと同じ `seconds / 5` 単位および戦力によるHP進行を使用する。
+
+これによりPhase 7のダンジョン・ボスも、
+
+オンライン進行
+↓
+保存
+↓
+ゲーム終了
+↓
+オフライン進行
+↓
+同じ `phase4ProcessOffline()`
+↓
+同じ `phase4ProcessActivity()`
+↓
+進行継続
+
+という既存放置システムの経路を利用する。
+
+Phase 7専用の独立した活動タイマー・遠征ループ・ボス戦ループを追加してはならない。
+
+Phase 7の完了記録はPhase 7固有記録だけで完結させず、既存Phase 4のダンジョン・ボス進行記録にも保存する。
+

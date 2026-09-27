@@ -576,6 +576,15 @@ function phase4ProcessActivity(seconds) {
   const activity = state.phase4.activeActivity;
   if (!activity) return;
 
+  if (
+    (activity.type === "phase7-dungeon" ||
+      activity.type === "phase7-boss") &&
+    typeof phase7ProcessActivity === "function"
+  ) {
+    phase7ProcessActivity(seconds);
+    return;
+  }
+
   const power = phase4ActivityPower();
   const units = Math.max(0, seconds) / 5;
 

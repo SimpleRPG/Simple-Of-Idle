@@ -661,6 +661,11 @@ function phase7ClearDungeon(id) {
   if (!dungeon || state.phase7.clearedDungeons.includes(id)) return;
   if (!dungeon.requirement()) return;
 
+  if (state.phase4?.activeActivity) {
+    addLog("現在の遠征が完了するまで、別のダンジョン・ボスには挑戦できない。");
+    return;
+  }
+
   const power = typeof adventurerStats === "function"
     ? state.adventurers.reduce(
         (sum, adventurer) => sum + Number(adventurerStats(adventurer).attack || 0),
@@ -675,27 +680,26 @@ function phase7ClearDungeon(id) {
     return;
   }
 
-  state.phase7.clearedDungeons.push(id);
+  state.phase4.activeActivity = {
+    type: "phase7-dungeon",
+    id,
+    startedAt: Date.now()
+  };
+  state.phase4.mode = "dungeon";
+  state.phase4.dungeonProgress = 0;
 
-  if (state.phase4) {
-    if (!state.phase4.clearedDungeons || typeof state.phase4.clearedDungeons !== "object") {
-      state.phase4.clearedDungeons = {};
-    }
-    state.phase4.clearedDungeons[`phase7:${id}`] = true;
-  }
-
-  Object.entries(dungeon.reward).forEach(([resource, amount]) => {
-    phase7AddResource(resource, amount);
-  });
-
-  addLog(`🏰 ${dungeon.name} を踏破した。`);
-  phase7RefreshCollections();
+  addLog(`🏰 「${dungeon.name}」への新世界遠征を開始した。`);
 }
 
 function phase7DefeatBoss(id) {
   const boss = PHASE7_BOSSES.find(item => item.id === id);
   if (!boss || state.phase7.defeatedBosses.includes(id)) return;
   if (!boss.requirement()) return;
+
+  if (state.phase4?.activeActivity) {
+    addLog("現在の遠征が完了するまで、別のダンジョン・ボスには挑戦できない。");
+    return;
+  }
 
   const power = typeof adventurerStats === "function"
     ? state.adventurers.reduce(
@@ -709,31 +713,113 @@ function phase7DefeatBoss(id) {
     return;
   }
 
-  state.phase7.defeatedBosses.push(id);
+  state.phase4.activeActivity = {
+    type: "phase7-boss",
+    id,
+    startedAt: Date.now()
+  };
+  state.phase4.mode = "boss";
+  state.phase4.bossProgress[`phase7:${id}`] =
+    Number(state.phase4.bossProgress[`phase7:${id}`]) || 0;
 
-  if (state.phase4) {
-    if (!Array.isArray(state.phase4.defeatedBosses)) {
-      state.phase4.defeatedBosses = [];
+  addLog(`👑 「${boss.name}」への新世界ボス戦を開始した。`);
+}
+
+function phase7ProcessActivity(seconds) {
+  if (!state.phase4?.activeActivity) return;
+
+  const activity = state.phase4.activeActivity;
+  const power = typeof phase4ActivityPower === "function"
+    ? phase4ActivityPower()
+    : Math.max(1, Number(state.adventurers?.length) || 1);
+  const units = Math.max(0, Number(seconds) || 0) / 5;
+
+  if (activity.type === "phase7-dungeon") {
+    const dungeon = PHASE7_DUNGEONS.find(item => item.id === activity.id);
+
+    if (!dungeon) {
+      state.phase4.activeActivity = null;
+      return;
     }
-    if (!state.phase4.defeatedBosses.includes(`phase7:${id}`)) {
-      state.phase4.defeatedBosses.push(`phase7:${id}`);
+
+    state.phase4.dungeonProgress +=
+      units * Math.max(1, power / 35);
+
+    if (state.phase4.dungeonProgress >= dungeon.floors) {
+      state.phase4.dungeonProgress = 0;
+
+      if (!state.phase7.clearedDungeons.includes(dungeon.id)) {
+        state.phase7.clearedDungeons.push(dungeon.id);
+      }
+
+      if (!state.phase4.clearedDungeons ||
+          typeof state.phase4.clearedDungeons !== "object") {
+        state.phase4.clearedDungeons = {};
+      }
+
+      state.phase4.clearedDungeons[`phase7:${dungeon.id}`] = true;
+
+      Object.entries(dungeon.reward).forEach(([resource, amount]) => {
+        phase7AddResource(resource, amount);
+      });
+
+      addLog(`🏰 ${dungeon.name} を踏破した。`);
+      state.phase4.activeActivity = null;
+      state.phase4.mode = "map";
+      phase7RefreshCollections();
+    }
+
+    return;
+  }
+
+  if (activity.type === "phase7-boss") {
+    const boss = PHASE7_BOSSES.find(item => item.id === activity.id);
+
+    if (!boss) {
+      state.phase4.activeActivity = null;
+      return;
+    }
+
+    const progressId = `phase7:${boss.id}`;
+    const current = Number(state.phase4.bossProgress[progressId]) || 0;
+    const next = Math.min(
+      boss.hp,
+      current + units * power
+    );
+
+    state.phase4.bossProgress[progressId] = next;
+
+    if (next >= boss.hp) {
+      if (!state.phase7.defeatedBosses.includes(boss.id)) {
+        state.phase7.defeatedBosses.push(boss.id);
+      }
+
+      if (!Array.isArray(state.phase4.defeatedBosses)) {
+        state.phase4.defeatedBosses = [];
+      }
+
+      if (!state.phase4.defeatedBosses.includes(progressId)) {
+        state.phase4.defeatedBosses.push(progressId);
+      }
+
+      if (typeof phase5RegisterMonster === "function") {
+        phase5RegisterMonster(boss.id, { kills: 1 });
+      }
+
+      if (typeof phase5RegisterDiscoveries === "function") {
+        phase5RegisterDiscoveries();
+      }
+
+      Object.entries(boss.reward).forEach(([resource, amount]) => {
+        phase7AddResource(resource, amount);
+      });
+
+      addLog(`👑 ${boss.name} を撃破した。`);
+      state.phase4.activeActivity = null;
+      state.phase4.mode = "map";
+      phase7RefreshCollections();
     }
   }
-
-  if (typeof phase5RegisterMonster === "function") {
-    phase5RegisterMonster(id, { kills: 1 });
-  }
-
-  if (typeof phase5RegisterDiscoveries === "function") {
-    phase5RegisterDiscoveries();
-  }
-
-  Object.entries(boss.reward).forEach(([resource, amount]) => {
-    phase7AddResource(resource, amount);
-  });
-
-  addLog(`👑 ${boss.name} を撃破した。`);
-  phase7RefreshCollections();
 }
 
 function phase7HasEquipment(name) {
@@ -1096,19 +1182,40 @@ function phase7RenderDungeons() {
   document.getElementById("phase7DungeonStatus").textContent =
     `${state.phase7.clearedDungeons.length} / ${PHASE7_DUNGEONS.length}`;
 
+  const active = state.phase4?.activeActivity;
+
   root.innerHTML = PHASE7_DUNGEONS.map(dungeon => {
     const cleared = state.phase7.clearedDungeons.includes(dungeon.id);
     const available = dungeon.requirement();
+    const running =
+      active?.type === "phase7-dungeon" &&
+      active.id === dungeon.id;
+    const blocked = Boolean(active) && !running;
+
+    const progress = running
+      ? Math.min(
+          100,
+          Number(state.phase4.dungeonProgress || 0) /
+            dungeon.floors * 100
+        )
+      : 0;
 
     return `
       <div class="phase7-card ${available ? "" : "locked"}">
-        <strong>${cleared ? "🏰" : available ? "◇" : "🔒"} ${dungeon.name}</strong>
-        <small>${dungeon.floors}階層 / ${cleared ? "踏破済み" : available ? "挑戦可能" : "未解禁"}</small>
+        <strong>${cleared ? "🏰" : running ? "⏳" : available ? "◇" : "🔒"} ${dungeon.name}</strong>
+        <small>${dungeon.floors}階層 / ${
+          cleared ? "踏破済み" :
+          running ? "遠征中" :
+          available ? "挑戦可能" : "未解禁"
+        }</small>
+        ${running
+          ? `<div class="phase4-progress"><i style="width:${progress}%"></i></div>`
+          : ""}
         <button class="small-button"
           data-phase7-action="dungeon"
           data-id="${dungeon.id}"
-          ${cleared || !available ? "disabled" : ""}
-        >${cleared ? "踏破済み" : "挑戦"}</button>
+          ${cleared || !available || blocked || running ? "disabled" : ""}
+        >${cleared ? "踏破済み" : running ? "遠征中" : "挑戦"}</button>
       </div>
     `;
   }).join("");
@@ -1121,19 +1228,39 @@ function phase7RenderBosses() {
   document.getElementById("phase7BossStatus").textContent =
     `${state.phase7.defeatedBosses.length} / ${PHASE7_BOSSES.length}`;
 
+  const active = state.phase4?.activeActivity;
+
   root.innerHTML = PHASE7_BOSSES.map(boss => {
     const defeated = state.phase7.defeatedBosses.includes(boss.id);
     const available = boss.requirement();
+    const running =
+      active?.type === "phase7-boss" &&
+      active.id === boss.id;
+    const blocked = Boolean(active) && !running;
+    const progress = running
+      ? Math.min(
+          100,
+          Number(state.phase4.bossProgress[`phase7:${boss.id}`] || 0) /
+            boss.hp * 100
+        )
+      : 0;
 
     return `
       <div class="phase7-card ${available ? "" : "locked"}">
-        <strong>${defeated ? "👑" : available ? "👹" : "🔒"} ${boss.name}</strong>
-        <small>HP ${boss.hp.toLocaleString()} / ${defeated ? "撃破済み" : available ? "挑戦可能" : "未解禁"}</small>
+        <strong>${defeated ? "👑" : running ? "⏳" : available ? "👹" : "🔒"} ${boss.name}</strong>
+        <small>HP ${boss.hp.toLocaleString()} / ${
+          defeated ? "撃破済み" :
+          running ? "戦闘中" :
+          available ? "挑戦可能" : "未解禁"
+        }</small>
+        ${running
+          ? `<div class="phase4-progress"><i style="width:${progress}%"></i></div>`
+          : ""}
         <button class="small-button"
           data-phase7-action="boss"
           data-id="${boss.id}"
-          ${defeated || !available ? "disabled" : ""}
-        >${defeated ? "撃破済み" : "挑戦"}</button>
+          ${defeated || !available || blocked || running ? "disabled" : ""}
+        >${defeated ? "撃破済み" : running ? "戦闘中" : "挑戦"}</button>
       </div>
     `;
   }).join("");
