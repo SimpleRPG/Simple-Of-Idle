@@ -139,6 +139,7 @@ const PHASE7_RESEARCH = [
     name: "星界航行",
     world: "astral",
     cost: 5,
+    seconds: 60,
     requirements: [],
     description: "星界への探索経路を確立する。"
   },
@@ -147,6 +148,7 @@ const PHASE7_RESEARCH = [
     name: "星鋼鍛造",
     world: "astral",
     cost: 8,
+    seconds: 120,
     requirements: ["astral-navigation"],
     description: "星鋼と星鋼装備の生産を解禁する。"
   },
@@ -155,6 +157,7 @@ const PHASE7_RESEARCH = [
     name: "エーテル理論",
     world: "ether",
     cost: 10,
+    seconds: 180,
     requirements: ["star-forging"],
     description: "エーテル界とエーテル結晶を解禁する。"
   },
@@ -163,6 +166,7 @@ const PHASE7_RESEARCH = [
     name: "世界間自動化",
     world: "ether",
     cost: 12,
+    seconds: 240,
     requirements: ["ether-theory"],
     description: "新世界の放置処理効率を高める。"
   },
@@ -171,6 +175,7 @@ const PHASE7_RESEARCH = [
     name: "無限研究",
     world: "infinity",
     cost: 20,
+    seconds: 300,
     requirements: ["world-automation"],
     description: "無限界と上位プレステージへ接続する。"
   }
@@ -523,19 +528,59 @@ function phase7StartResearch(id) {
   if (!research || state.phase7.completedResearch.includes(id)) return;
   if (!phase7CanResearch(research)) return;
 
+  if (state.phase4?.activeResearch) {
+    addLog("現在の研究が完了するまで次の研究は開始できない。");
+    return;
+  }
+
   if (phase7ResearchPoints() < research.cost) {
     addLog(`${research.name} には研究ポイント ${research.cost} が必要。`);
     return;
   }
 
   state.phase4.researchPoints -= research.cost;
-  state.phase7.completedResearch.push(id);
+  state.phase4.activeResearch = {
+    id: `phase7:${id}`,
+    startedAt: Date.now(),
+    progress: 0
+  };
+
+  addLog(`🔬 新研究「${research.name}」を開始した。`);
+  phase7RenderResearch();
+  saveState();
+}
+
+function phase7ProcessResearch(seconds) {
+  const active = state.phase4?.activeResearch;
+  if (!active || typeof active.id !== "string") return;
+  if (!active.id.startsWith("phase7:")) return;
+
+  const id = active.id.slice("phase7:".length);
+  const research = PHASE7_RESEARCH.find(item => item.id === id);
+
+  if (!research) {
+    state.phase4.activeResearch = null;
+    return;
+  }
+
+  active.progress = Math.min(
+    research.seconds,
+    Number(active.progress || 0) + Math.max(0, Number(seconds) || 0)
+  );
+
+  if (active.progress < research.seconds) return;
+
+  if (!state.phase7.completedResearch.includes(id)) {
+    state.phase7.completedResearch.push(id);
+  }
+
+  state.phase4.activeResearch = null;
 
   if (id === "infinity-research") {
     state.phase7.upperPrestige.unlocked = true;
   }
 
-  addLog(`🔬 新研究「${research.name}」を完了した。`);
+  addLog(`🔬 新研究「${research.name}」が完了した。`);
   phase7RefreshUnlocks();
 }
 
@@ -1013,20 +1058,32 @@ function phase7RenderResearch() {
   root.innerHTML = PHASE7_RESEARCH.map(research => {
     const done = state.phase7.completedResearch.includes(research.id);
     const available = phase7CanResearch(research);
+    const active =
+      state.phase4?.activeResearch?.id === `phase7:${research.id}`;
+    const progress = active
+      ? Math.min(
+          100,
+          Number(state.phase4.activeResearch.progress || 0) /
+            research.seconds * 100
+        )
+      : 0;
 
     return `
       <div class="phase7-card ${done ? "" : available ? "" : "locked"}">
-        <strong>${done ? "🔬" : "◇"} ${research.name}</strong>
+        <strong>${done ? "🔬" : active ? "⏳" : "◇"} ${research.name}</strong>
         <small>${research.description}</small>
-        <span class="phase7-chip">必要RP ${research.cost}</span>
+        <span class="phase7-chip">必要RP ${research.cost} / ${research.seconds}秒</span>
         ${research.requirements.length
           ? `<small>前提: ${research.requirements.join(" → ")}</small>`
+          : ""}
+        ${active
+          ? `<div class="phase4-progress"><i style="width:${progress}%"></i></div>`
           : ""}
         <button class="small-button"
           data-phase7-action="research"
           data-id="${research.id}"
-          ${done || !available || phase7ResearchPoints() < research.cost ? "disabled" : ""}
-        >${done ? "完了" : "研究する"}</button>
+          ${done || active || !available || phase7ResearchPoints() < research.cost || state.phase4?.activeResearch ? "disabled" : ""}
+        >${done ? "完了" : active ? "研究中" : "研究開始"}</button>
       </div>
     `;
   }).join("");

@@ -391,6 +391,18 @@ function phase4ProcessResearch(seconds) {
   const active = state.phase4.activeResearch;
   if (!active) return;
 
+  // Phase 7研究も既存Phase 4研究進行へ接続する。
+  // Phase 7専用の研究タイマーは作らず、同じoffline/online経路を利用する。
+  if (
+    typeof active.id === "string" &&
+    active.id.startsWith("phase7:")
+  ) {
+    if (typeof phase7ProcessResearch === "function") {
+      phase7ProcessResearch(seconds);
+    }
+    return;
+  }
+
   const research = PHASE4_RESEARCH.find(entry => entry.id === active.id);
   if (!research) {
     state.phase4.activeResearch = null;
