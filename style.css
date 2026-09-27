@@ -671,3 +671,72 @@ button:focus-visible {
     grid-template-columns: 1fr;
   }
 }
+
+.phase5-list {
+  display: grid;
+  gap: 9px;
+}
+
+.phase5-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: rgba(8,13,25,.5);
+}
+
+.phase5-card.locked {
+  opacity: .5;
+}
+
+.phase5-card strong {
+  display: block;
+}
+
+.phase5-card small {
+  display: block;
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+.phase5-progress {
+  height: 7px;
+  margin-top: 8px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: #0b1020;
+}
+
+.phase5-progress i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent2), var(--accent));
+}
+
+.phase5-chip {
+  display: inline-block;
+  margin-top: 7px;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: var(--panel2);
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.phase5-card .small-button {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 760px) {
+  .phase5-card {
+    align-items: flex-start;
+  }
+
+  .phase5-card .small-button {
+    align-self: center;
+  }
+}

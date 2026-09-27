@@ -52,6 +52,7 @@
       <button class="tab" data-tab="base">拠点</button>
       <button class="tab" data-tab="production">生産</button>
       <button class="tab" data-tab="phase4">探索・研究</button>
+      <button class="tab" data-tab="phase5">コレクション</button>
     </nav>
 
     <section id="tab-home" class="tab-panel active">
@@ -357,6 +358,98 @@
         </article>
       </section>
     </section>
+
+    <section id="tab-phase5" class="tab-panel">
+      <section class="layout">
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">MONSTER CODEX</span>
+              <h2>モンスター図鑑</h2>
+            </div>
+            <span class="badge" id="phase5MonsterStatus">0 / 0</span>
+          </div>
+          <p class="section-note">遭遇・討伐したモンスターを記録します。初回登録と討伐数はコレクション進行へ接続します。</p>
+          <div id="phase5MonsterList" class="phase5-list"></div>
+        </article>
+
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">EQUIPMENT CODEX</span>
+              <h2>装備図鑑</h2>
+            </div>
+            <span class="badge" id="phase5EquipmentStatus">0 / 0</span>
+          </div>
+          <p class="section-note">入手した装備を登録します。登録済み装備はプレステージ後もコレクションとして保持できる構造です。</p>
+          <div id="phase5EquipmentList" class="phase5-list"></div>
+        </article>
+      </section>
+
+      <section class="layout">
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">MATERIAL CODEX</span>
+              <h2>素材図鑑</h2>
+            </div>
+            <span class="badge" id="phase5MaterialStatus">0 / 0</span>
+          </div>
+          <p class="section-note">採取・生産・探索で入手した素材を記録し、用途と入手経路を確認できます。</p>
+          <div id="phase5MaterialList" class="phase5-list"></div>
+        </article>
+
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">DISCOVERIES</span>
+              <h2>発見物</h2>
+            </div>
+            <span class="badge" id="phase5DiscoveryStatus">0 / 0</span>
+          </div>
+          <p class="section-note">未知エリア・研究・ボス・イベントなどから得た特殊な発見を記録します。</p>
+          <div id="phase5DiscoveryList" class="phase5-list"></div>
+        </article>
+      </section>
+
+      <section class="layout">
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">PETS</span>
+              <h2>ペット</h2>
+            </div>
+            <span class="badge" id="phase5PetStatus">0匹</span>
+          </div>
+          <p class="section-note">発見したペットを育成すると、探索・採取・戦闘へ恒久的な効果が加わります。</p>
+          <div id="phase5PetList" class="phase5-list"></div>
+        </article>
+
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">ACHIEVEMENTS</span>
+              <h2>実績</h2>
+            </div>
+            <span class="badge" id="phase5AchievementStatus">0 / 0</span>
+          </div>
+          <p class="section-note">戦闘・生産・研究・探索・コレクションの達成状況を記録し、恒久ボーナスへ接続します。</p>
+          <div id="phase5AchievementList" class="phase5-list"></div>
+        </article>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <div>
+            <span class="eyebrow">TITLES</span>
+            <h2>称号</h2>
+          </div>
+          <span class="badge" id="phase5TitleStatus">0 / 0</span>
+        </div>
+        <p class="section-note">獲得した称号を選択できます。称号効果は戦闘・探索・生産など既存システムへ接続します。</p>
+        <div id="phase5TitleList" class="phase5-list"></div>
+      </section>
+    </section>
   </main>
 
   <div id="offlineModal" class="modal hidden">
@@ -372,5 +465,6 @@
   <script src="game.js"></script>
   <script src="phase3.js"></script>
   <script src="phase4.js"></script>
+  <script src="phase5.js"></script>
 </body>
 </html>
