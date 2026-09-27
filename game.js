@@ -1275,6 +1275,11 @@ const startupOffline = processOffline(
   Math.max(0, (Date.now() - state.lastSavedAt) / 1000)
 );
 
+// 後段で読み込まれるPhase 7にも、起動時の同一オフライン時間を一度だけ渡す。
+// game.jsの保存でlastSavedAtが更新されても、Phase 7がオフライン時間を失わないようにする。
+window.__simpleOfIdleStartupOfflineSeconds =
+  Math.max(0, Number(startupOffline?.seconds) || 0);
+
 saveState();
 render();
 showOfflineReport(startupOffline);

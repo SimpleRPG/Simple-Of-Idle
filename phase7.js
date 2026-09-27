@@ -1544,6 +1544,21 @@ phase7RefreshUnlocks();
 phase7PatchStats();
 phase7PatchProduction();
 phase7PatchOfflineProcessing();
+
+// game.jsが起動時に算出した同一オフライン時間を、
+// Phase 7ロード後に一度だけ新世界素材へ反映する。
+// Phase 7独自の時計や別オフライン経路は追加しない。
+const startupOfflineSeconds =
+  Math.max(
+    0,
+    Number(window.__simpleOfIdleStartupOfflineSeconds) || 0
+  );
+
+if (startupOfflineSeconds > 0) {
+  phase7ProcessOffline(startupOfflineSeconds);
+  window.__simpleOfIdleStartupOfflineSeconds = 0;
+}
+
 phase7Render();
 saveState();
 
