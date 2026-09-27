@@ -223,9 +223,9 @@ function phase5RegisterDiscoveries() {
   if (state.phase4?.discoveredUnknown) {
     state.phase4.discoveredUnknown.forEach(id => {
       const mapping = {
-        "hidden-underground-waterway": "ancient-device",
-        "sealed-ancient-library": "ancient-grimoire",
-        "unknown-domain": "unknown-creature"
+        "hidden-cavern": "ancient-device",
+        "sealed-library": "ancient-grimoire",
+        "unknown-frontier": "unknown-creature"
       };
       const discoveryId = mapping[id];
       if (discoveryId && !state.phase5.discoveries.includes(discoveryId)) {

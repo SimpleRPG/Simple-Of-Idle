@@ -482,8 +482,40 @@ function phase4DiscoverUnknown(id) {
   state.phase4.discoveredUnknown.push(id);
   phase4GrantReward(unknown.reward);
   addLog(`未知エリア「${unknown.name}」を発見した。`);
+
+  // 発見した未知エリアは既存Phase 5図鑑へ即時同期する。
+  if (typeof phase5RegisterDiscoveries === "function") {
+    phase5RegisterDiscoveries();
+  }
+
   saveState();
   phase4Render();
+}
+
+function phase4TryDiscoverUnknown() {
+  const available = phase4UnlockedUnknown().filter(
+    entry => !state.phase4.discoveredUnknown.includes(entry.id)
+  );
+
+  if (!available.length) return false;
+
+  // 既存の探索イベントを発見判定の入口として利用する。
+  // Phase 7の発見補正は確率へ乗算し、上限を設けて極端な確率上昇を防ぐ。
+  const discoveryMultiplier =
+    typeof phase7DiscoveryMultiplier === "function"
+      ? phase7DiscoveryMultiplier()
+      : 1;
+
+  const chance = Math.min(
+    0.5,
+    0.08 * Math.max(0.1, Number(discoveryMultiplier) || 1)
+  );
+
+  if (Math.random() >= chance) return false;
+
+  const unknown = available[0];
+  phase4DiscoverUnknown(unknown.id);
+  return true;
 }
 
 function phase4MapSelect(id) {
@@ -674,6 +706,11 @@ function phase4RollRandomEvent() {
   ];
 
   phase4GrantReward(event.reward);
+
+  // ランダム探索イベントを既存の未知エリア自動発見へ接続する。
+  // 発見補正はphase4TryDiscoverUnknown()側で一元計算する。
+  phase4TryDiscoverUnknown();
+
   state.phase4.eventLog.unshift({
     id: event.id,
     name: event.name,
