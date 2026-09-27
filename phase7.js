@@ -55,34 +55,10 @@ const PHASE7_WORLDS = [
 ];
 
 const PHASE7_JOBS = [
-  {
-    id: "astral-knight",
-    name: "星騎士",
-    description: "星界の力を戦闘へ変換する上位戦闘職。",
-    world: "astral",
-    effect: { attack: 12, defense: 5 }
-  },
-  {
-    id: "ether-scholar",
-    name: "エーテル学者",
-    description: "エーテル研究と研究進行に特化した職業。",
-    world: "ether",
-    effect: { research: 0.2, xp: 0.05 }
-  },
-  {
-    id: "world-ranger",
-    name: "世界探索者",
-    description: "新世界探索と発見に特化した職業。",
-    world: "astral",
-    effect: { exploration: 0.15, discovery: 0.1 }
-  },
-  {
-    id: "infinity-artisan",
-    name: "無限鍛造師",
-    description: "高位素材を装備・生産へ変換する職業。",
-    world: "infinity",
-    effect: { production: 0.2, attack: 8 }
-  }
+  { id: "astral-knight", world: "astral" },
+  { id: "ether-scholar", world: "ether" },
+  { id: "world-ranger", world: "astral" },
+  { id: "infinity-artisan", world: "infinity" }
 ];
 
 const PHASE7_RECIPES = [
@@ -271,6 +247,8 @@ const PHASE7_JOB_REGISTRY = {
     speed: 1.05,
     critical: 0.03,
     xp: 0
+,
+    effects: { attack: 12, defense: 5 }
   },
   "ether-scholar": {
     name: "エーテル学者",
@@ -281,6 +259,8 @@ const PHASE7_JOB_REGISTRY = {
     speed: 1.05,
     critical: 0.02,
     xp: 0.2
+,
+    effects: { research: 0.2, xp: 0.05 }
   },
   "world-ranger": {
     name: "世界探索者",
@@ -291,6 +271,8 @@ const PHASE7_JOB_REGISTRY = {
     speed: 1.45,
     critical: 0.08,
     xp: 0.05
+,
+    effects: { exploration: 0.15, discovery: 0.1 }
   },
   "infinity-artisan": {
     name: "無限鍛造師",
@@ -301,6 +283,8 @@ const PHASE7_JOB_REGISTRY = {
     speed: 1.1,
     critical: 0.03,
     xp: 0.05
+,
+    effects: { production: 0.2, attack: 8 }
   }
 };
 
@@ -564,7 +548,7 @@ function phase7RefreshUnlocks() {
     if (state.phase7.discoveredWorlds.includes(job.world) &&
         !state.phase7.unlockedJobs.includes(job.id)) {
       state.phase7.unlockedJobs.push(job.id);
-      addLog(`⚔️ 新職業「${job.name}」が解禁された。`);
+      addLog(`⚔️ 新職業「${PHASE7_JOB_REGISTRY[job.id]?.name || job.id}」が解禁された。`);
     }
   });
 
@@ -914,10 +898,10 @@ function phase7JobEffects() {
   if (!Array.isArray(state.adventurers)) return result;
 
   state.adventurers.forEach(adventurer => {
-    const job = PHASE7_JOBS.find(entry => entry.id === adventurer.job);
+    const job = PHASE7_JOB_REGISTRY[adventurer.job];
     if (!job) return;
 
-    Object.entries(job.effect || {}).forEach(([key, value]) => {
+    Object.entries(job.effects || {}).forEach(([key, value]) => {
       if (Object.prototype.hasOwnProperty.call(result, key)) {
         result[key] += Number(value) || 0;
       }
@@ -1248,11 +1232,12 @@ function phase7RenderJobs() {
 
   root.innerHTML = PHASE7_JOBS.map(job => {
     const unlocked = state.phase7.unlockedJobs.includes(job.id);
+    const registry = PHASE7_JOB_REGISTRY[job.id];
 
     return `
       <div class="phase7-card ${unlocked ? "" : "locked"}">
-        <strong>${unlocked ? "⚔️" : "🔒"} ${unlocked ? job.name : "未解禁職業"}</strong>
-        <small>${unlocked ? job.description : `世界「${job.world}」到達で解禁`}</small>
+        <strong>${unlocked ? (registry?.icon || "⚔️") : "🔒"} ${unlocked ? (registry?.name || job.id) : "未解禁職業"}</strong>
+        <small>${unlocked ? (registry?.description || "") : `世界「${job.world}」到達で解禁`}</small>
         ${unlocked ? `<span class="phase7-chip">職業システムへ追加済み</span>` : ""}
       </div>
     `;
