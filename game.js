@@ -1245,22 +1245,141 @@ document.addEventListener("click", event => {
   }
 });
 
-document.getElementById("hireAdventurer").addEventListener("click", hireAdventurer);
+document.getElementById("hireAdventurer").addEventListener("click", () => {
+  const execute = () => hireAdventurer();
+  window.SimpleIdleErrorHandler?.setRetry(null);
+  window.SimpleIdleErrorHandler?.setContext({
+    phase: "冒険者管理",
+    operation: "冒険者を雇用",
+    file: "game.js"
+  });
+  window.SimpleIdleErrorHandler?.setRetry(execute);
+  try {
+    execute();
+    window.SimpleIdleErrorHandler?.clearContext();
+    window.SimpleIdleErrorHandler?.setRetry(null);
+  } catch (error) {
+    window.SimpleIdleErrorHandler?.report(error, {
+      phase: "冒険者管理",
+      operation: "冒険者を雇用",
+      file: "game.js"
+    });
+    throw error;
+  }
+});
 
 document.getElementById("manualSave").addEventListener("click", () => {
-  saveState();
+  window.SimpleIdleErrorHandler?.setRetry(() => saveState());
+  window.SimpleIdleErrorHandler?.setContext({
+    phase: "セーブ処理",
+    operation: "手動保存",
+    file: "game.js"
+  });
+  try {
+    saveState();
+  } catch (error) {
+    window.SimpleIdleErrorHandler?.report(error, {
+      phase: "セーブ処理",
+      operation: "手動保存",
+      file: "game.js"
+    });
+    throw error;
+  }
 });
 
-document.getElementById("exportSave").addEventListener("click", exportSave);
+document.getElementById("exportSave").addEventListener("click", () => {
+  const execute = () => exportSave();
+  window.SimpleIdleErrorHandler?.setRetry(null);
+  window.SimpleIdleErrorHandler?.setContext({
+    phase: "セーブ処理",
+    operation: "セーブデータの書き出し",
+    file: "game.js"
+  });
+  window.SimpleIdleErrorHandler?.setRetry(execute);
+  try {
+    execute();
+    window.SimpleIdleErrorHandler?.clearContext();
+    window.SimpleIdleErrorHandler?.setRetry(null);
+  } catch (error) {
+    window.SimpleIdleErrorHandler?.report(error, {
+      phase: "セーブ処理",
+      operation: "セーブデータの書き出し",
+      file: "game.js"
+    });
+    throw error;
+  }
+});
 
 document.getElementById("importSave").addEventListener("change", event => {
-  importSaveFile(event.target.files?.[0]);
-  event.target.value = "";
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  window.SimpleIdleErrorHandler?.setContext({
+    phase: "セーブ処理",
+    operation: "セーブデータの読み込み",
+    file: "game.js"
+  });
+  window.SimpleIdleErrorHandler?.setRetry(() => importSaveFile(file));
+
+  try {
+    importSaveFile(file);
+  } catch (error) {
+    window.SimpleIdleErrorHandler?.report(error, {
+      phase: "セーブ処理",
+      operation: "セーブデータの読み込み",
+      file: "game.js"
+    });
+    throw error;
+  } finally {
+    event.target.value = "";
+  }
 });
 
-document.getElementById("resetSave").addEventListener("click", resetSave);
+document.getElementById("resetSave").addEventListener("click", () => {
+  const execute = () => resetSave();
+  window.SimpleIdleErrorHandler?.setRetry(null);
+  window.SimpleIdleErrorHandler?.setContext({
+    phase: "セーブ処理",
+    operation: "セーブデータのリセット",
+    file: "game.js"
+  });
+  window.SimpleIdleErrorHandler?.setRetry(execute);
+  try {
+    execute();
+    window.SimpleIdleErrorHandler?.clearContext();
+    window.SimpleIdleErrorHandler?.setRetry(null);
+  } catch (error) {
+    window.SimpleIdleErrorHandler?.report(error, {
+      phase: "セーブ処理",
+      operation: "セーブデータのリセット",
+      file: "game.js"
+    });
+    throw error;
+  }
+});
 
-document.getElementById("deleteLegacySave").addEventListener("click", deleteLegacySave);
+document.getElementById("deleteLegacySave").addEventListener("click", () => {
+  const execute = () => deleteLegacySave();
+  window.SimpleIdleErrorHandler?.setRetry(null);
+  window.SimpleIdleErrorHandler?.setContext({
+    phase: "セーブ処理",
+    operation: "旧v1セーブの削除",
+    file: "game.js"
+  });
+  window.SimpleIdleErrorHandler?.setRetry(execute);
+  try {
+    execute();
+    window.SimpleIdleErrorHandler?.clearContext();
+    window.SimpleIdleErrorHandler?.setRetry(null);
+  } catch (error) {
+    window.SimpleIdleErrorHandler?.report(error, {
+      phase: "セーブ処理",
+      operation: "旧v1セーブの削除",
+      file: "game.js"
+    });
+    throw error;
+  }
+});
 
 document.getElementById("closeOffline").addEventListener("click", () => {
   document.getElementById("offlineModal").classList.add("hidden");
