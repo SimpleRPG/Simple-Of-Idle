@@ -402,20 +402,21 @@ function phase6ResetNormalProgress() {
   }
 
   if (state.phase4) {
-    state.phase4.selectedMap = "村周辺";
+    // PHASE4_MAPS は内部IDで管理するため、表示名ではなく village を使用する。
+    state.phase4.selectedMap = "village";
     state.phase4.mode = "map";
     state.phase4.lastProcessedAt = Date.now();
     state.phase4.activeResearch = null;
     state.phase4.activeActivity = null;
     state.phase4.researchPoints = 0;
     state.phase4.researchLevels = {};
-    state.phase4.mapProgress = {};
-    state.phase4.dungeonProgress = {};
+    state.phase4.mapProgress = 0;
+    state.phase4.dungeonProgress = 0;
     state.phase4.bossProgress = {};
     state.phase4.raidProgress = {};
     state.phase4.discoveredUnknown = [];
     state.phase4.defeatedBosses = [];
-    state.phase4.clearedDungeons = [];
+    state.phase4.clearedDungeons = {};
     state.phase4.eventLog = [];
   }
 
