@@ -1120,14 +1120,10 @@ function phase7PatchStats() {
   adventurerStats = function(adventurer) {
     const result = original(adventurer);
     const effects = phase7Effects();
-    const job = PHASE7_JOBS.find(entry => entry.id === adventurer.job);
 
-    if (job?.effect) {
-      result.attack += Number(job.effect.attack || 0);
-      result.defense += Number(job.effect.defense || 0);
-      result.xpMultiplier *= 1 + Number(job.effect.xp || 0);
-    }
-
+    // Phase 7職業そのものの能力値は、既存JOBSへ登録した値を
+    // game.jsの共通adventurerStats()がすでに適用している。
+    // ここではPhase 7固有のコレクション・恒久成長効果だけを追加する。
     result.attack += Number(effects.attack || 0);
     result.defense += Number(effects.defense || 0);
 
