@@ -54,6 +54,7 @@
       <button class="tab" data-tab="phase4">探索・研究</button>
       <button class="tab" data-tab="phase5">コレクション</button>
       <button class="tab" data-tab="phase6">プレステージ</button>
+      <button class="tab" data-tab="phase7">新世界</button>
     </nav>
 
     <section id="tab-home" class="tab-panel active">
@@ -528,6 +529,108 @@
         </article>
       </section>
     </section>
+
+    <section id="tab-phase7" class="tab-panel">
+      <section class="layout">
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">NEW WORLD</span>
+              <h2>新世界</h2>
+            </div>
+            <span class="badge" id="phase7WorldStatus">未解禁</span>
+          </div>
+          <p class="section-note">超越によって到達できる新しい成長領域。新素材・新モンスター・新職業・新生産・新研究へつながります。</p>
+          <div id="phase7WorldList" class="phase7-list"></div>
+        </article>
+
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">NEW JOBS</span>
+              <h2>新職業</h2>
+            </div>
+            <span class="badge" id="phase7JobStatus">0 / 0</span>
+          </div>
+          <p class="section-note">新世界の進行と超越によって新しい職業を解禁します。既存の職業システムを拡張します。</p>
+          <div id="phase7JobList" class="phase7-list"></div>
+        </article>
+      </section>
+
+      <section class="layout">
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">NEW PRODUCTION</span>
+              <h2>新生産</h2>
+            </div>
+            <span class="badge" id="phase7ProductionStatus">0 / 0</span>
+          </div>
+          <p class="section-note">新世界素材を既存の生産・鍛冶・錬金・料理へ接続し、上位装備と研究素材を供給します。</p>
+          <div id="phase7ProductionList" class="phase7-list"></div>
+        </article>
+
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">NEW RESEARCH</span>
+              <h2>新研究</h2>
+            </div>
+            <span class="badge" id="phase7ResearchStatus">0 RP</span>
+          </div>
+          <div id="phase7ResearchList" class="phase7-list"></div>
+        </article>
+      </section>
+
+      <section class="layout">
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">NEW DUNGEON</span>
+              <h2>新ダンジョン</h2>
+            </div>
+            <span class="badge" id="phase7DungeonStatus">0 / 0</span>
+          </div>
+          <div id="phase7DungeonList" class="phase7-list"></div>
+        </article>
+
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">NEW BOSS</span>
+              <h2>新ボス</h2>
+            </div>
+            <span class="badge" id="phase7BossStatus">0 / 0</span>
+          </div>
+          <div id="phase7BossList" class="phase7-list"></div>
+        </article>
+      </section>
+
+      <section class="layout">
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">NEW COLLECTION</span>
+              <h2>新コレクション</h2>
+            </div>
+            <span class="badge" id="phase7CollectionStatus">0 / 0</span>
+          </div>
+          <div id="phase7CollectionList" class="phase7-list"></div>
+        </article>
+
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">NEW PRESTIGE</span>
+              <h2>新プレステージ</h2>
+            </div>
+            <span class="badge" id="phase7PrestigeStatus">未解禁</span>
+          </div>
+          <p class="section-note">超越の先にある新しい周回階層。既存の転生・覚醒・超越ポイントと別の重複通貨を増やさず、上位解禁を中心に拡張します。</p>
+          <div id="phase7PrestigePanel"></div>
+        </article>
+      </section>
+    </section>
   </main>
 
   <div id="offlineModal" class="modal hidden">
@@ -545,5 +648,6 @@
   <script src="phase4.js"></script>
   <script src="phase5.js"></script>
   <script src="phase6.js"></script>
+  <script src="phase7.js"></script>
 </body>
 </html>

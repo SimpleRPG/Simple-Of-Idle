@@ -814,3 +814,70 @@ button:focus-visible {
   line-height: 1.5;
 }
 
+
+.phase7-list {
+  display: grid;
+  gap: 10px;
+}
+
+.phase7-card {
+  padding: 13px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: rgba(8,13,25,.5);
+}
+
+.phase7-card.locked {
+  opacity: .5;
+}
+
+.phase7-card strong {
+  display: block;
+}
+
+.phase7-card small {
+  display: block;
+  margin-top: 5px;
+  line-height: 1.5;
+}
+
+.phase7-card button {
+  margin-top: 9px;
+}
+
+.phase7-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.phase7-chip {
+  display: inline-block;
+  margin-top: 7px;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: var(--panel2);
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.phase7-progress {
+  height: 7px;
+  margin-top: 8px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: #0b1020;
+}
+
+.phase7-progress i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent2), var(--accent));
+}
+
+@media (max-width: 760px) {
+  .phase7-grid {
+    grid-template-columns: 1fr;
+  }
+}
