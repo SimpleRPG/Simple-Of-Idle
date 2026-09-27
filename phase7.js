@@ -231,6 +231,69 @@ const PHASE7_BOSSES = [
   }
 ];
 
+const PHASE7_INTEGRATION_MATERIALS = [
+  { id: "starOre", name: "星鉱石", source: "星界遺跡・星界ボス", description: "星鋼の原料となる新世界鉱石。" },
+  { id: "etherDust", name: "エーテル粉", source: "エーテル迷宮・エーテルボス", description: "エーテル結晶の原料。" },
+  { id: "starIngot", name: "星鋼", source: "新世界生産", description: "星界の高位鍛造素材。" },
+  { id: "etherCrystal", name: "エーテル結晶", source: "新世界生産", description: "エーテル系装備と無限核の素材。" },
+  { id: "infinityFragment", name: "無限断片", source: "無限深淵・無限界の主", description: "無限界の上位素材。" },
+  { id: "infinityCore", name: "無限核", source: "新世界生産", description: "上位プレステージへ接続する特殊素材。" }
+];
+
+const PHASE7_INTEGRATION_EQUIPMENT = [
+  { id: "星鋼剣", name: "星鋼剣", description: "星鋼から製作する新世界武器。" },
+  { id: "エーテルローブ", name: "エーテルローブ", description: "エーテル結晶を織り込んだ新世界防具。" }
+];
+
+const PHASE7_INTEGRATION_MONSTERS = [
+  { id: "astral-beast", name: "星界獣王", zone: "星界", minLevel: 20 },
+  { id: "ether-overseer", name: "エーテル監督者", zone: "エーテル界", minLevel: 30 },
+  { id: "infinity-sovereign", name: "無限界の主", zone: "無限界", minLevel: 40 }
+];
+
+const PHASE7_JOB_REGISTRY = {
+  "astral-knight": {
+    name: "星騎士",
+    icon: "🌠",
+    description: "星界の力を戦闘へ変換する上位戦闘職。",
+    attack: 12,
+    defense: 5,
+    speed: 1.05,
+    critical: 0.03,
+    xp: 0
+  },
+  "ether-scholar": {
+    name: "エーテル学者",
+    icon: "🔮",
+    description: "エーテル研究と研究進行に特化した上位職。",
+    attack: 2,
+    defense: 2,
+    speed: 1.05,
+    critical: 0.02,
+    xp: 0.2
+  },
+  "world-ranger": {
+    name: "世界探索者",
+    icon: "🌌",
+    description: "新世界探索と発見に特化した上位職。",
+    attack: 6,
+    defense: 3,
+    speed: 1.45,
+    critical: 0.08,
+    xp: 0.05
+  },
+  "infinity-artisan": {
+    name: "無限鍛造師",
+    icon: "♾️",
+    description: "高位素材を装備・生産へ変換する上位職。",
+    attack: 8,
+    defense: 6,
+    speed: 1.1,
+    critical: 0.03,
+    xp: 0.05
+  }
+};
+
 const PHASE7_COLLECTIONS = [
   {
     id: "star-monsters",
@@ -265,6 +328,51 @@ const PHASE7_COLLECTIONS = [
     effect: { collection: 0.05 }
   }
 ];
+
+function phase7IntegrateExistingSystems() {
+  // Phase 7の職業を既存JOBSへ登録し、既存の職業選択・ステータス計算をそのまま利用する。
+  if (typeof JOBS !== "undefined") {
+    Object.entries(PHASE7_JOB_REGISTRY).forEach(([id, job]) => {
+      JOBS[id] = JOBS[id] || { ...job };
+    });
+  }
+
+  // Phase 7素材を既存Phase 5素材図鑑へ接続する。
+  if (typeof PHASE5_MATERIALS !== "undefined") {
+    PHASE7_INTEGRATION_MATERIALS.forEach(material => {
+      if (!PHASE5_MATERIALS.some(item => item.id === material.id)) {
+        PHASE5_MATERIALS.push(material);
+      }
+    });
+  }
+
+  // Phase 7装備を既存Phase 5装備図鑑へ接続する。
+  if (typeof PHASE5_EQUIPMENT !== "undefined") {
+    PHASE7_INTEGRATION_EQUIPMENT.forEach(equipment => {
+      if (!PHASE5_EQUIPMENT.some(item => item.id === equipment.id)) {
+        PHASE5_EQUIPMENT.push(equipment);
+      }
+    });
+  }
+
+  // Phase 7ボスを既存Phase 5モンスター図鑑へ接続する。
+  if (typeof PHASE5_MONSTERS !== "undefined") {
+    PHASE7_INTEGRATION_MONSTERS.forEach(monster => {
+      if (!PHASE5_MONSTERS.some(item => item.id === monster.id)) {
+        PHASE5_MONSTERS.push(monster);
+      }
+    });
+  }
+
+  // 既存図鑑の素材同期を即時反映する。
+  if (typeof phase5RegisterMaterials === "function") {
+    phase5RegisterMaterials();
+  }
+
+  if (typeof phase5UpdateCollectionBonus === "function") {
+    phase5UpdateCollectionBonus();
+  }
+}
 
 function phase7EnsureState() {
   state.phase7 = {
