@@ -624,6 +624,17 @@ function changeJob(adventurerId, jobId) {
   const adventurer = state.adventurers.find(a => a.id === adventurerId);
   if (!adventurer || !JOBS[jobId]) return;
 
+  const phase7Job =
+    jobId.startsWith("astral-") ||
+    jobId.startsWith("ether-") ||
+    jobId.startsWith("world-") ||
+    jobId.startsWith("infinity-");
+
+  if (phase7Job && !state.phase7?.unlockedJobs?.includes(jobId)) {
+    addLog(`${JOBS[jobId].name} は新世界の解禁条件を満たしていない。`);
+    return;
+  }
+
   const minimum = jobId === "adventurer" ? 1 : 3;
   if (adventurer.level < minimum) {
     addLog(`${JOBS[jobId].name} は Lv.${minimum} から選択できる。`);
@@ -865,6 +876,14 @@ function renderJobs() {
   document.getElementById("jobList").innerHTML = Object.entries(JOBS).map(([id, job]) => {
     const current = adventurer.job === id;
     const minimum = id === "adventurer" ? 1 : 3;
+    const phase7Unlocked =
+      id.startsWith("astral-") ||
+      id.startsWith("ether-") ||
+      id.startsWith("world-") ||
+      id.startsWith("infinity-")
+        ? Boolean(state.phase7?.unlockedJobs?.includes(id))
+        : true;
+    const available = phase7Unlocked && adventurer.level >= minimum;
 
     return `
       <div class="choice ${current ? "current" : ""}">
@@ -872,12 +891,13 @@ function renderJobs() {
           <strong>${job.icon} ${job.name}</strong>
           <small>${job.description}</small>
         </div>
-        <button class="small-button" data-action="job" data-job="${id}" ${current || adventurer.level < minimum ? "disabled" : ""}>
-          ${current ? "現在" : `Lv.${minimum}から`}
+        <button class="small-button" data-action="job" data-job="${id}" ${current || !available ? "disabled" : ""}>
+          ${current ? "現在" : !phase7Unlocked ? "未解禁" : `Lv.${minimum}から`}
         </button>
       </div>
     `;
   }).join("");
+}
 
   document.getElementById("enhanceInfo").textContent =
     `${adventurer.name} の装備を強化。鍛冶場と「鍛冶知識」でコストを下げられます。`;

@@ -92,6 +92,7 @@ const PHASE7_RECIPES = [
     world: "astral",
     inputs: { starOre: 3, iron: 2 },
     output: { starIngot: 1 },
+    research: "star-forging",
     description: "星鉱石と鉄を精錬した上位金属。"
   },
   {
@@ -100,6 +101,7 @@ const PHASE7_RECIPES = [
     world: "ether",
     inputs: { etherDust: 3, magicStone: 2 },
     output: { etherCrystal: 1 },
+    research: "ether-theory",
     description: "高度研究と特殊装備に使う結晶。"
   },
   {
@@ -108,6 +110,7 @@ const PHASE7_RECIPES = [
     world: "astral",
     inputs: { starIngot: 4, metalPart: 2 },
     output: { equipment: "星鋼剣" },
+    research: "star-forging",
     description: "星鋼から作る新世界武器。"
   },
   {
@@ -116,6 +119,7 @@ const PHASE7_RECIPES = [
     world: "ether",
     inputs: { etherCrystal: 3, cloth: 3 },
     output: { equipment: "エーテルローブ" },
+    research: "ether-theory",
     description: "エーテル結晶を織り込んだ上位防具。"
   },
   {
@@ -124,6 +128,7 @@ const PHASE7_RECIPES = [
     world: "infinity",
     inputs: { infinityFragment: 3, etherCrystal: 2 },
     output: { infinityCore: 1 },
+    research: "infinity-research",
     description: "無限界の特殊生産に使う中核素材。"
   }
 ];
@@ -444,7 +449,13 @@ function phase7RefreshUnlocks() {
   });
 
   PHASE7_RECIPES.forEach(recipe => {
-    if (state.phase7.discoveredWorlds.includes(recipe.world) &&
+    const worldUnlocked = state.phase7.discoveredWorlds.includes(recipe.world);
+    const researchUnlocked =
+      !recipe.research ||
+      state.phase7.completedResearch.includes(recipe.research);
+
+    if (worldUnlocked &&
+        researchUnlocked &&
         !state.phase7.unlockedRecipes.includes(recipe.id)) {
       state.phase7.unlockedRecipes.push(recipe.id);
     }
@@ -498,6 +509,18 @@ function phase7Craft(id) {
   const recipe = PHASE7_RECIPES.find(item => item.id === id);
   if (!recipe || !state.phase7.unlockedRecipes.includes(id)) return;
 
+  let targetAdventurer = null;
+  if (recipe.output.equipment) {
+    targetAdventurer = typeof selectedAdventurer === "function"
+      ? selectedAdventurer()
+      : state.adventurers?.[0];
+
+    if (!targetAdventurer) {
+      addLog(`${recipe.name} の装備先となる冒険者がいない。`);
+      return;
+    }
+  }
+
   for (const [resource, amount] of Object.entries(recipe.inputs)) {
     const current = Number(state.phase3?.resources?.[resource]) || 0;
     if (current < amount) {
@@ -513,11 +536,7 @@ function phase7Craft(id) {
   if (recipe.output.equipment) {
     const name = recipe.output.equipment;
 
-    const adventurer = typeof selectedAdventurer === "function"
-      ? selectedAdventurer()
-      : state.adventurers[0];
-
-    if (!adventurer) return;
+    const adventurer = targetAdventurer;
 
     adventurer.equipment.push({
       name,
@@ -565,6 +584,13 @@ function phase7ClearDungeon(id) {
 
   state.phase7.clearedDungeons.push(id);
 
+  if (state.phase4) {
+    if (!state.phase4.clearedDungeons || typeof state.phase4.clearedDungeons !== "object") {
+      state.phase4.clearedDungeons = {};
+    }
+    state.phase4.clearedDungeons[`phase7:${id}`] = true;
+  }
+
   Object.entries(dungeon.reward).forEach(([resource, amount]) => {
     phase7AddResource(resource, amount);
   });
@@ -591,6 +617,23 @@ function phase7DefeatBoss(id) {
   }
 
   state.phase7.defeatedBosses.push(id);
+
+  if (state.phase4) {
+    if (!Array.isArray(state.phase4.defeatedBosses)) {
+      state.phase4.defeatedBosses = [];
+    }
+    if (!state.phase4.defeatedBosses.includes(`phase7:${id}`)) {
+      state.phase4.defeatedBosses.push(`phase7:${id}`);
+    }
+  }
+
+  if (typeof phase5RegisterMonster === "function") {
+    phase5RegisterMonster(id, { kills: 1 });
+  }
+
+  if (typeof phase5RegisterDiscoveries === "function") {
+    phase5RegisterDiscoveries();
+  }
 
   Object.entries(boss.reward).forEach(([resource, amount]) => {
     phase7AddResource(resource, amount);
@@ -749,23 +792,22 @@ function phase7DoUpperPrestige() {
 
   state.phase7.upperPrestige.count += 1;
 
-  state.level = 1;
-  state.xp = 0;
-  state.gold = 0;
-  state.kills = 0;
-  state.zoneIndex = 0;
+  // 通常進行のリセット範囲はPhase 6の正規処理へ統一する。
+  // Phase 7固有の世界・研究・図鑑・恒久上位成長は保持する。
+  if (typeof phase6ResetNormalProgress === "function") {
+    phase6ResetNormalProgress();
+  }
 
-  if (state.adventurers) {
-    state.adventurers.forEach(adventurer => {
-      adventurer.level = 1;
-      adventurer.xp = 0;
-      adventurer.equipment = [];
-    });
+  phase7EnsureState();
+  phase7IntegrateExistingSystems();
+  phase7RefreshUnlocks();
+  phase7RefreshCollections();
+
+  if (typeof phase5RegisterAllExisting === "function") {
+    phase5RegisterAllExisting();
   }
 
   addLog(`∞ 上位プレステージを実行した。上位ポイント +${gain}`);
-
-  phase7RefreshUnlocks();
 }
 
 function phase7PatchStats() {
