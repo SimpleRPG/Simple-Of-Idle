@@ -50,6 +50,7 @@
       <button class="tab" data-tab="character">キャラクター</button>
       <button class="tab" data-tab="skills">スキル</button>
       <button class="tab" data-tab="base">拠点</button>
+      <button class="tab" data-tab="production">生産</button>
     </nav>
 
     <section id="tab-home" class="tab-panel active">
@@ -233,6 +234,55 @@
         </article>
       </section>
     </section>
+
+    <section id="tab-production" class="tab-panel">
+      <section class="layout">
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">GATHERING</span>
+              <h2>資源採取</h2>
+            </div>
+            <span class="badge" id="gatheringRate">自動</span>
+          </div>
+          <p class="section-note">冒険者を採取班へ割り当てると、放置中も資源を集めます。採取資源は生産・鍛冶・錬金・料理へ接続します。</p>
+          <div id="gatheringList" class="facility-list"></div>
+        </article>
+
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">WAREHOUSE</span>
+              <h2>倉庫</h2>
+            </div>
+            <span class="badge" id="warehouseCapacity">0 / 0</span>
+          </div>
+          <div id="resourceList" class="resource-grid"></div>
+        </article>
+      </section>
+
+      <section class="layout">
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">PRODUCTION</span>
+              <h2>生産</h2>
+            </div>
+          </div>
+          <div id="productionList" class="recipe-list"></div>
+        </article>
+
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">CRAFTING</span>
+              <h2>鍛冶・錬金・料理</h2>
+            </div>
+          </div>
+          <div id="craftingList" class="recipe-list"></div>
+        </article>
+      </section>
+    </section>
   </main>
 
   <div id="offlineModal" class="modal hidden">
@@ -246,5 +296,6 @@
   </div>
 
   <script src="game.js"></script>
+  <script src="phase3.js"></script>
 </body>
 </html>

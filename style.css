@@ -489,3 +489,112 @@ button:focus-visible {
   .unlock-grid { grid-template-columns: repeat(2, 1fr); }
   .skill-card, .tree-node, .facility, .choice { align-items: flex-start; }
 }
+
+.resource-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.resource-item {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(8,13,25,.5);
+}
+
+.resource-item strong {
+  display: block;
+  font-size: 17px;
+}
+
+.resource-item small {
+  display: block;
+  margin-top: 3px;
+}
+
+.recipe-list {
+  display: grid;
+  gap: 9px;
+}
+
+.recipe {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 13px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: rgba(8,13,25,.5);
+}
+
+.recipe strong {
+  display: block;
+}
+
+.recipe small {
+  display: block;
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+.recipe button {
+  min-width: 90px;
+}
+
+.gathering-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: rgba(8,13,25,.5);
+}
+
+.gathering-row strong {
+  display: block;
+}
+
+.gathering-row small {
+  display: block;
+  margin-top: 4px;
+}
+
+.gathering-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.gathering-actions .small-button.active {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.production-summary {
+  margin-bottom: 12px;
+  padding: 12px;
+  border-radius: 10px;
+  background: rgba(8,13,25,.45);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+@media (max-width: 500px) {
+  .resource-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .recipe,
+  .gathering-row {
+    grid-template-columns: 1fr;
+  }
+
+  .gathering-actions {
+    justify-content: flex-start;
+  }
+}
