@@ -598,3 +598,76 @@ button:focus-visible {
     justify-content: flex-start;
   }
 }
+
+.phase4-list {
+  display: grid;
+  gap: 9px;
+}
+
+.phase4-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  padding: 13px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: rgba(8,13,25,.5);
+}
+
+.phase4-card.locked {
+  opacity: .48;
+}
+
+.phase4-card.current {
+  border-color: var(--accent);
+}
+
+.phase4-card strong {
+  display: block;
+}
+
+.phase4-card small {
+  display: block;
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+.phase4-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.phase4-chip {
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: var(--panel2);
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.phase4-progress {
+  height: 7px;
+  margin-top: 9px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: #0b1020;
+}
+
+.phase4-progress i {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--accent2), var(--accent));
+}
+
+.phase4-card .small-button.active {
+  outline: 1px solid var(--accent);
+}
+
+@media (max-width: 500px) {
+  .phase4-card {
+    grid-template-columns: 1fr;
+  }
+}

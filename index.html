@@ -51,6 +51,7 @@
       <button class="tab" data-tab="skills">スキル</button>
       <button class="tab" data-tab="base">拠点</button>
       <button class="tab" data-tab="production">生産</button>
+      <button class="tab" data-tab="phase4">探索・研究</button>
     </nav>
 
     <section id="tab-home" class="tab-panel active">
@@ -283,6 +284,79 @@
         </article>
       </section>
     </section>
+
+    <section id="tab-phase4" class="tab-panel">
+      <section class="layout">
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">MAP</span>
+              <h2>マップ探索</h2>
+            </div>
+            <span class="badge" id="phase4MapStatus">探索中</span>
+          </div>
+          <p class="section-note">探索で新エリア・素材・モンスター・ボス・発見を解禁します。解禁条件は既存のレベル・討伐・研究・ボス進行へ接続されます。</p>
+          <div id="phase4MapList" class="phase4-list"></div>
+        </article>
+
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">DUNGEON</span>
+              <h2>ダンジョン</h2>
+            </div>
+            <span class="badge" id="phase4DungeonStatus">待機</span>
+          </div>
+          <div id="phase4DungeonList" class="phase4-list"></div>
+        </article>
+      </section>
+
+      <section class="layout">
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">BOSS / RAID</span>
+              <h2>ボス・レイド</h2>
+            </div>
+            <span class="badge" id="phase4BossStatus">未挑戦</span>
+          </div>
+          <div id="phase4BossList" class="phase4-list"></div>
+        </article>
+
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">RESEARCH</span>
+              <h2>研究・技術ツリー</h2>
+            </div>
+            <span class="badge" id="phase4ResearchStatus">研究ポイント 0</span>
+          </div>
+          <div id="phase4ResearchList" class="phase4-list"></div>
+        </article>
+      </section>
+
+      <section class="layout">
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">UNKNOWN</span>
+              <h2>未知エリア</h2>
+            </div>
+          </div>
+          <div id="phase4UnknownList" class="phase4-list"></div>
+        </article>
+
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">EVENT</span>
+              <h2>ランダムイベント</h2>
+            </div>
+          </div>
+          <div id="phase4EventList" class="phase4-list"></div>
+        </article>
+      </section>
+    </section>
   </main>
 
   <div id="offlineModal" class="modal hidden">
@@ -297,5 +371,6 @@
 
   <script src="game.js"></script>
   <script src="phase3.js"></script>
+  <script src="phase4.js"></script>
 </body>
 </html>
