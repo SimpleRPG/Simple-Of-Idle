@@ -46,10 +46,10 @@ const PHASE7_WORLDS = [
   {
     id: "infinity",
     name: "無限界",
-    description: "超越と上位プレステージの先にある長期成長世界。",
+    description: "超越と上位研究の先にある長期成長世界。",
     requirement: () =>
       phase7TranscendenceCount() >= 5 &&
-      state.phase7.upperPrestige.count >= 1,
+      state.phase7.completedResearch.length >= 4,
     requiredTranscendence: 5
   }
 ];
