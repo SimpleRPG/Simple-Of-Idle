@@ -1167,21 +1167,49 @@ function phase7PatchOfflineProcessing() {
   window.__phase7OfflinePatched = true;
 }
 
-function phase7PatchResourceGain() {
-  if (typeof phase3AddResource !== "function") return;
-  if (window.__phase7ResourcePatched) return;
+function phase7PatchProduction() {
+  if (typeof phase3Craft !== "function") return;
+  if (window.__phase7ProductionPatched) return;
 
-  const original = phase3AddResource;
+  const original = phase3Craft;
 
-  phase3AddResource = function(id, amount, ...args) {
-    const adjusted =
-      (Number(amount) || 0) *
-      phase7ProductionMultiplier();
+  phase3Craft = function phase7CraftWrapper(recipeId) {
+    const recipes = [
+      ...(typeof PRODUCTION_RECIPES !== "undefined" ? PRODUCTION_RECIPES : []),
+      ...(typeof CRAFT_RECIPES !== "undefined" ? CRAFT_RECIPES : [])
+    ];
 
-    return original.call(this, id, adjusted, ...args);
+    const recipe = recipes.find(entry => entry.id === recipeId);
+
+    if (
+      recipe &&
+      !recipe.output?.equipment &&
+      recipe.output &&
+      typeof phase7ProductionMultiplier === "function"
+    ) {
+      const originalAddResource = phase3AddResource;
+      const multiplier = phase7ProductionMultiplier();
+
+      phase3AddResource = function(id, amount, ...args) {
+        return originalAddResource.call(
+          this,
+          id,
+          (Number(amount) || 0) * multiplier,
+          ...args
+        );
+      };
+
+      try {
+        return original(recipeId);
+      } finally {
+        phase3AddResource = originalAddResource;
+      }
+    }
+
+    return original(recipeId);
   };
 
-  window.__phase7ResourcePatched = true;
+  window.__phase7ProductionPatched = true;
 }
 
 function phase7RenderWorlds() {
@@ -1529,7 +1557,7 @@ phase7EnsureState();
 phase7IntegrateExistingSystems();
 phase7RefreshUnlocks();
 phase7PatchStats();
-phase7PatchResourceGain();
+phase7PatchProduction();
 phase7PatchOfflineProcessing();
 phase7Render();
 saveState();
