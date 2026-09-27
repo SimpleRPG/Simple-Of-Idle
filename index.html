@@ -35,122 +35,203 @@
       <article class="card stat">
         <span>討伐数</span>
         <strong id="kills">0</strong>
-        <small>自動戦闘</small>
+        <small>ギルド全体</small>
       </article>
       <article class="card stat">
-        <span>探索</span>
-        <strong id="exploration">村周辺</strong>
-        <small id="explorationProgress">探索中</small>
+        <span>冒険者</span>
+        <strong id="adventurerCount">1</strong>
+        <small id="adventurerUnlock">次の雇用 Lv.5</small>
       </article>
     </section>
 
-    <section class="layout">
-      <article class="card">
+    <nav class="tabs" aria-label="ゲームメニュー">
+      <button class="tab active" data-tab="home">ホーム</button>
+      <button class="tab" data-tab="adventure">冒険</button>
+      <button class="tab" data-tab="character">キャラクター</button>
+      <button class="tab" data-tab="skills">スキル</button>
+      <button class="tab" data-tab="base">拠点</button>
+    </nav>
+
+    <section id="tab-home" class="tab-panel active">
+      <section class="layout">
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">GUILD</span>
+              <h2>ギルド状況</h2>
+            </div>
+            <span class="badge" id="className">冒険者</span>
+          </div>
+
+          <div class="character">
+            <div class="avatar">⚔</div>
+            <div>
+              <h3 id="homeCharacterName">見習い冒険者</h3>
+              <p id="homeCharacterText">自動探索で成長し、職業とスキルを解禁する。</p>
+            </div>
+          </div>
+
+          <div class="stats-list">
+            <div><span>攻撃力</span><b id="attack">10</b></div>
+            <div><span>防御力</span><b id="defense">5</b></div>
+            <div><span>探索速度</span><b id="speed">1.0</b></div>
+            <div><span>クリティカル</span><b id="critical">5%</b></div>
+            <div><span>経験値倍率</span><b id="xpMultiplier">1.00x</b></div>
+            <div><span>ゴールド倍率</span><b id="goldMultiplier">1.00x</b></div>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">EQUIPMENT</span>
+              <h2>装備</h2>
+            </div>
+            <span class="badge" id="equipmentPower">+0</span>
+          </div>
+          <div id="equipmentList" class="equipment-list"></div>
+        </article>
+      </section>
+
+      <section class="layout">
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">ADVENTURE</span>
+              <h2>自動探索</h2>
+            </div>
+            <span class="live-dot">LIVE</span>
+          </div>
+
+          <div class="adventure-panel">
+            <div class="zone-icon">🌲</div>
+            <div class="zone-info">
+              <h3 id="zoneName">村周辺</h3>
+              <p id="enemyName">スライム</p>
+              <div class="progress"><i id="battleBar"></i></div>
+              <small id="battleText">次の戦闘まで --</small>
+            </div>
+          </div>
+
+          <div class="resource-row">
+            <div><span>経験値</span><b id="recentXp">+0</b></div>
+            <div><span>ゴールド</span><b id="recentGold">+0</b></div>
+            <div><span>戦利品</span><b id="recentLoot">なし</b></div>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">LOG</span>
+              <h2>冒険ログ</h2>
+            </div>
+          </div>
+          <div id="log" class="log"></div>
+        </article>
+      </section>
+
+      <section class="card">
         <div class="section-title">
           <div>
-            <span class="eyebrow">CHARACTER</span>
-            <h2>冒険者</h2>
-          </div>
-          <span class="badge" id="className">冒険者</span>
-        </div>
-
-        <div class="character">
-          <div class="avatar">⚔</div>
-          <div>
-            <h3>見習い冒険者</h3>
-            <p>世界を探索し、素材と装備を集める。</p>
+            <span class="eyebrow">ROADMAP</span>
+            <h2>成長システム</h2>
           </div>
         </div>
-
-        <div class="stats-list">
-          <div><span>攻撃力</span><b id="attack">10</b></div>
-          <div><span>防御力</span><b id="defense">5</b></div>
-          <div><span>探索速度</span><b id="speed">1.0</b></div>
-        </div>
-      </article>
-
-      <article class="card">
-        <div class="section-title">
-          <div>
-            <span class="eyebrow">EQUIPMENT</span>
-            <h2>装備</h2>
-          </div>
-        </div>
-
-        <div id="equipmentList" class="equipment-list"></div>
-      </article>
+        <div id="roadmap" class="unlock-grid"></div>
+      </section>
     </section>
 
-    <section class="layout">
-      <article class="card">
+    <section id="tab-adventure" class="tab-panel">
+      <section class="card">
         <div class="section-title">
           <div>
-            <span class="eyebrow">ADVENTURE</span>
-            <h2>自動探索</h2>
+            <span class="eyebrow">ADVENTURERS</span>
+            <h2>冒険者編成</h2>
           </div>
-          <span class="live-dot">LIVE</span>
+          <span class="badge" id="partyPower">戦力 0</span>
         </div>
-
-        <div class="adventure-panel">
-          <div class="zone-icon">🌲</div>
-          <div class="zone-info">
-            <h3 id="zoneName">村周辺</h3>
-            <p id="enemyName">スライム</p>
-            <div class="progress"><i id="battleBar"></i></div>
-            <small id="battleText">次の戦闘まで --</small>
-          </div>
-        </div>
-
-        <div class="resource-row">
-          <div>
-            <span>経験値</span>
-            <b id="recentXp">+0</b>
-          </div>
-          <div>
-            <span>ゴールド</span>
-            <b id="recentGold">+0</b>
-          </div>
-          <div>
-            <span>戦利品</span>
-            <b id="recentLoot">なし</b>
-          </div>
-        </div>
-      </article>
-
-      <article class="card">
-        <div class="section-title">
-          <div>
-            <span class="eyebrow">LOG</span>
-            <h2>冒険ログ</h2>
-          </div>
-        </div>
-        <div id="log" class="log"></div>
-      </article>
+        <p class="section-note">雇用した冒険者は自動探索へ参加し、それぞれの職業・装備・スキルが戦闘へ反映されます。</p>
+        <div id="adventurerList" class="adventurer-list"></div>
+        <button id="hireAdventurer" class="action-button">冒険者を雇用</button>
+      </section>
     </section>
 
-    <section class="card roadmap">
-      <div class="section-title">
-        <div>
-          <span class="eyebrow">NEXT</span>
-          <h2>これから解禁される世界</h2>
-        </div>
-      </div>
-      <div class="unlock-grid">
-        <span>職業</span>
-        <span>スキル</span>
-        <span>スキルツリー</span>
-        <span>採取</span>
-        <span>生産</span>
-        <span>拠点</span>
-        <span>研究</span>
-        <span>ダンジョン</span>
-        <span>ボス</span>
-        <span>ペット</span>
-        <span>コレクション</span>
-        <span>転生</span>
-        <span>覚醒</span>
-        <span>超越</span>
-      </div>
+    <section id="tab-character" class="tab-panel">
+      <section class="layout">
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">JOB</span>
+              <h2>職業</h2>
+            </div>
+          </div>
+          <div id="jobList" class="choice-grid"></div>
+        </article>
+
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">ENHANCEMENT</span>
+              <h2>装備強化</h2>
+            </div>
+          </div>
+          <p id="enhanceInfo" class="section-note"></p>
+          <div id="enhanceList" class="equipment-list"></div>
+        </article>
+      </section>
+    </section>
+
+    <section id="tab-skills" class="tab-panel">
+      <section class="layout">
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">SKILLS</span>
+              <h2>スキル</h2>
+            </div>
+            <span class="badge">SP <b id="skillPoints">0</b></span>
+          </div>
+          <div id="skillList" class="skill-list"></div>
+        </article>
+
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">SKILL TREE</span>
+              <h2>成長ツリー</h2>
+            </div>
+          </div>
+          <p class="section-note">戦闘・経済・探索の方向へSPを振り分け、放置の進め方そのものを変えます。</p>
+          <div id="skillTree" class="tree-list"></div>
+        </article>
+      </section>
+    </section>
+
+    <section id="tab-base" class="tab-panel">
+      <section class="layout">
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">BASE</span>
+              <h2>拠点</h2>
+            </div>
+            <span class="badge">Lv.<b id="baseLevel">1</b></span>
+          </div>
+          <p class="section-note">施設を強化すると冒険者・装備・経済へ恒常的に効果がつながります。</p>
+          <div id="facilityList" class="facility-list"></div>
+        </article>
+
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">BASE EFFECTS</span>
+              <h2>拠点効果</h2>
+            </div>
+          </div>
+          <div id="baseEffects" class="stats-list base-effects"></div>
+        </article>
+      </section>
     </section>
   </main>
 
