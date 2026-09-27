@@ -391,6 +391,11 @@ function phase4ProcessResearch(seconds) {
   const active = state.phase4.activeResearch;
   if (!active) return;
 
+  const researchSpeed =
+    typeof phase7ResearchSpeedMultiplier === "function"
+      ? phase7ResearchSpeedMultiplier()
+      : 1;
+
   // Phase 7研究も既存Phase 4研究進行へ接続する。
   // Phase 7専用の研究タイマーは作らず、同じoffline/online経路を利用する。
   if (
@@ -398,7 +403,9 @@ function phase4ProcessResearch(seconds) {
     active.id.startsWith("phase7:")
   ) {
     if (typeof phase7ProcessResearch === "function") {
-      phase7ProcessResearch(seconds);
+      phase7ProcessResearch(
+        Math.max(0, seconds) * researchSpeed
+      );
     }
     return;
   }
@@ -408,11 +415,6 @@ function phase4ProcessResearch(seconds) {
     state.phase4.activeResearch = null;
     return;
   }
-
-  const researchSpeed =
-    typeof phase7ResearchSpeedMultiplier === "function"
-      ? phase7ResearchSpeedMultiplier()
-      : 1;
 
   active.progress = Math.min(
     research.seconds,

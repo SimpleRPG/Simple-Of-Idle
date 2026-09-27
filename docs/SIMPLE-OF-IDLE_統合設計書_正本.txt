@@ -1560,3 +1560,40 @@ Phase 7職業専用の研究処理・生産処理・戦闘処理を新設しな�
 上位プレステージ
 
 という統合経路を維持する。
+
+## 58. Phase 7職業能力値と研究速度補正の二重適用防止
+
+Phase 7職業の能力値と研究速度補正は、既存処理へ統合し、同一効果を二重適用しない。
+
+### 職業能力値
+
+Phase 7職業は既存 `JOBS` レジストリへ登録する。
+
+`JOBS`
+↓
+`adventurerStats()`
+↓
+既存戦闘能力値
+
+Phase 7職業の攻撃・防御・速度・クリティカル・経験値補正は、既存 `JOBS` と `adventurerStats()` によって適用する。
+
+Phase 7側の `phase7PatchStats()` は、既存 `JOBS` ですでに適用された職業能力値を再加算せず、Phase 7固有のコレクション・恒久成長効果のみを追加する。
+
+### 研究速度
+
+Phase 7職業の研究効果は、通常研究とPhase 7研究の両方で同一の研究速度計算を使用する。
+
+`phase7ResearchSpeedMultiplier()`
+↓
+`phase4ProcessResearch()`
+↓
+`state.phase4.activeResearch`
+↓
+通常研究 / Phase 7研究
+
+Phase 7研究の場合も、計算済みの研究速度補正を `phase7ProcessResearch()` へ渡す。
+
+Phase 7専用の研究タイマーは追加しない。
+
+これにより、Phase 7職業の効果を既存処理へ接続しながら、職業能力値・研究速度の二重適用を防止する。
+
