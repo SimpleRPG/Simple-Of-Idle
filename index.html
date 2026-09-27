@@ -53,6 +53,7 @@
       <button class="tab" data-tab="production">生産</button>
       <button class="tab" data-tab="phase4">探索・研究</button>
       <button class="tab" data-tab="phase5">コレクション</button>
+      <button class="tab" data-tab="phase6">プレステージ</button>
     </nav>
 
     <section id="tab-home" class="tab-panel active">
@@ -450,6 +451,83 @@
         <div id="phase5TitleList" class="phase5-list"></div>
       </section>
     </section>
+
+    <section id="tab-phase6" class="tab-panel">
+      <section class="layout">
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">REBIRTH</span>
+              <h2>転生</h2>
+            </div>
+            <span class="badge" id="phase6RebirthStatus">未解禁</span>
+          </div>
+          <p class="section-note">通常進行の一部をリセットし、転生ポイントを獲得します。図鑑・実績・称号などの恒久コレクションは保持されます。</p>
+          <div id="phase6RebirthPanel"></div>
+        </article>
+
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">REBIRTH TREE</span>
+              <h2>転生スキルツリー</h2>
+            </div>
+            <span class="badge" id="phase6RebirthPoints">0 RP</span>
+          </div>
+          <div id="phase6RebirthTree" class="phase6-tree"></div>
+        </article>
+      </section>
+
+      <section class="layout">
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">AWAKENING</span>
+              <h2>覚醒</h2>
+            </div>
+            <span class="badge" id="phase6AwakeningStatus">未解禁</span>
+          </div>
+          <p class="section-note">転生を重ねた冒険者が到達する第二の恒久成長。覚醒ポイントで上位成長を解禁します。</p>
+          <div id="phase6AwakeningPanel"></div>
+        </article>
+
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">AWAKENING TREE</span>
+              <h2>覚醒スキルツリー</h2>
+            </div>
+            <span class="badge" id="phase6AwakeningPoints">0 AP</span>
+          </div>
+          <div id="phase6AwakeningTree" class="phase6-tree"></div>
+        </article>
+      </section>
+
+      <section class="layout">
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">TRANSCENDENCE</span>
+              <h2>超越</h2>
+            </div>
+            <span class="badge" id="phase6TranscendenceStatus">未解禁</span>
+          </div>
+          <p class="section-note">長期進行の最上位プレステージ。新世界・高度自動化・特殊研究へつながる恒久成長です。</p>
+          <div id="phase6TranscendencePanel"></div>
+        </article>
+
+        <article class="card">
+          <div class="section-title">
+            <div>
+              <span class="eyebrow">TRANSCENDENCE TREE</span>
+              <h2>超越スキルツリー</h2>
+            </div>
+            <span class="badge" id="phase6TranscendencePoints">0 TP</span>
+          </div>
+          <div id="phase6TranscendenceTree" class="phase6-tree"></div>
+        </article>
+      </section>
+    </section>
   </main>
 
   <div id="offlineModal" class="modal hidden">
@@ -466,5 +544,6 @@
   <script src="phase3.js"></script>
   <script src="phase4.js"></script>
   <script src="phase5.js"></script>
+  <script src="phase6.js"></script>
 </body>
 </html>
