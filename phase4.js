@@ -409,9 +409,15 @@ function phase4ProcessResearch(seconds) {
     return;
   }
 
+  const researchSpeed =
+    typeof phase7ResearchSpeedMultiplier === "function"
+      ? phase7ResearchSpeedMultiplier()
+      : 1;
+
   active.progress = Math.min(
     research.seconds,
-    Number(active.progress || 0) + Math.max(0, seconds)
+    Number(active.progress || 0) +
+      Math.max(0, seconds) * researchSpeed
   );
 
   if (active.progress >= research.seconds) {

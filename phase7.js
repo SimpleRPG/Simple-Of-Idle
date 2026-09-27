@@ -900,6 +900,69 @@ function phase7RefreshCollections() {
   });
 }
 
+function phase7JobEffects() {
+  const result = {
+    attack: 0,
+    defense: 0,
+    exploration: 0,
+    research: 0,
+    production: 0,
+    xp: 0,
+    discovery: 0
+  };
+
+  if (!Array.isArray(state.adventurers)) return result;
+
+  state.adventurers.forEach(adventurer => {
+    const job = PHASE7_JOBS.find(entry => entry.id === adventurer.job);
+    if (!job) return;
+
+    Object.entries(job.effect || {}).forEach(([key, value]) => {
+      if (Object.prototype.hasOwnProperty.call(result, key)) {
+        result[key] += Number(value) || 0;
+      }
+    });
+  });
+
+  return result;
+}
+
+function phase7ResearchSpeedMultiplier() {
+  const jobEffects = phase7JobEffects();
+  const permanent = phase7Effects();
+
+  return Math.max(
+    0.1,
+    1 +
+      Number(jobEffects.research || 0) +
+      Number(permanent.research || 0)
+  );
+}
+
+function phase7ProductionMultiplier() {
+  const jobEffects = phase7JobEffects();
+  const permanent = phase7Effects();
+
+  return Math.max(
+    0.1,
+    1 +
+      Number(jobEffects.production || 0) +
+      Number(permanent.production || 0)
+  );
+}
+
+function phase7DiscoveryMultiplier() {
+  const jobEffects = phase7JobEffects();
+  const permanent = phase7Effects();
+
+  return Math.max(
+    0.1,
+    1 +
+      Number(jobEffects.discovery || 0) +
+      Number(permanent.discovery || 0)
+  );
+}
+
 function phase7Effects() {
   const result = {
     attack: 0,
@@ -1057,6 +1120,13 @@ function phase7PatchStats() {
   adventurerStats = function(adventurer) {
     const result = original(adventurer);
     const effects = phase7Effects();
+    const job = PHASE7_JOBS.find(entry => entry.id === adventurer.job);
+
+    if (job?.effect) {
+      result.attack += Number(job.effect.attack || 0);
+      result.defense += Number(job.effect.defense || 0);
+      result.xpMultiplier *= 1 + Number(job.effect.xp || 0);
+    }
 
     result.attack += Number(effects.attack || 0);
     result.defense += Number(effects.defense || 0);
@@ -1108,10 +1178,9 @@ function phase7PatchResourceGain() {
   const original = phase3AddResource;
 
   phase3AddResource = function(id, amount, ...args) {
-    const effects = phase7Effects();
     const adjusted =
       (Number(amount) || 0) *
-      (1 + Number(effects.production || 0));
+      phase7ProductionMultiplier();
 
     return original.call(this, id, adjusted, ...args);
   };
