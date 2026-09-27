@@ -340,6 +340,8 @@ const PHASE7_COLLECTIONS = [
 ];
 
 function phase7IntegrateExistingSystems() {
+  phase7IntegrateProductionRecipes();
+
   // Phase 7の職業を既存JOBSへ登録し、既存の職業選択・ステータス計算をそのまま利用する。
   if (typeof JOBS !== "undefined") {
     Object.entries(PHASE7_JOB_REGISTRY).forEach(([id, job]) => {
@@ -392,6 +394,109 @@ function phase7IntegrateExistingSystems() {
   if (typeof phase5UpdateCollectionBonus === "function") {
     phase5UpdateCollectionBonus();
   }
+}
+
+function phase7IntegrateProductionRecipes() {
+  if (
+    typeof PRODUCTION_RECIPES === "undefined" ||
+    typeof CRAFT_RECIPES === "undefined"
+  ) {
+    return;
+  }
+
+  const productionRecipes = [
+    {
+      id: "phase7-star-ingot",
+      phase7Id: "star-ingot",
+      type: "production",
+      name: "星鋼",
+      icon: "🌠",
+      inputs: { starOre: 3, iron: 2 },
+      output: { starIngot: 1 },
+      description: "星鉱石と鉄を精錬した上位金属。",
+      phase7World: "astral",
+      phase7Research: "star-forging"
+    },
+    {
+      id: "phase7-ether-crystal",
+      phase7Id: "ether-crystal",
+      type: "production",
+      name: "エーテル結晶",
+      icon: "🔮",
+      inputs: { etherDust: 3, magicStone: 2 },
+      output: { etherCrystal: 1 },
+      description: "エーテル粉と魔石から作る上位結晶。",
+      phase7World: "ether",
+      phase7Research: "ether-theory"
+    },
+    {
+      id: "phase7-infinity-core",
+      phase7Id: "infinity-core",
+      type: "production",
+      name: "無限核",
+      icon: "♾️",
+      inputs: { infinityFragment: 3, etherCrystal: 2 },
+      output: { infinityCore: 1 },
+      description: "無限界の上位生産へ接続する中核素材。",
+      phase7World: "infinity",
+      phase7Research: "infinity-research"
+    }
+  ];
+
+  const craftRecipes = [
+    {
+      id: "phase7-star-blade",
+      phase7Id: "star-blade",
+      type: "blacksmith",
+      name: "星鋼剣",
+      icon: "⚔️",
+      inputs: { starIngot: 4, metalPart: 2 },
+      output: { equipment: "weapon" },
+      equipment: {
+        name: "星鋼剣",
+        type: "weapon",
+        slot: "武器",
+        rarity: "epic",
+        attack: 35,
+        defense: 0
+      },
+      description: "星鋼から作る新世界武器。",
+      phase7World: "astral",
+      phase7Research: "star-forging"
+    },
+    {
+      id: "phase7-ether-robe",
+      phase7Id: "ether-robe",
+      type: "blacksmith",
+      name: "エーテルローブ",
+      icon: "🧥",
+      inputs: { etherCrystal: 3, cloth: 3 },
+      output: { equipment: "armor" },
+      equipment: {
+        name: "エーテルローブ",
+        type: "armor",
+        slot: "防具",
+        rarity: "epic",
+        attack: 0,
+        defense: 30
+      },
+      description: "エーテル結晶を織り込んだ上位防具。",
+      phase7World: "ether",
+      phase7Research: "ether-theory"
+    }
+  ];
+
+  productionRecipes.forEach(recipe => {
+    if (!PRODUCTION_RECIPES.some(item => item.phase7Id === recipe.phase7Id)) {
+      PRODUCTION_RECIPES.push(recipe);
+    }
+  });
+
+  craftRecipes.forEach(recipe => {
+    if (!CRAFT_RECIPES.some(item => item.phase7Id === recipe.phase7Id)) {
+      CRAFT_RECIPES.push(recipe);
+    }
+  });
 }
 
 function phase7EnsureState() {
@@ -598,61 +703,15 @@ function phase7Craft(id) {
   const recipe = PHASE7_RECIPES.find(item => item.id === id);
   if (!recipe || !state.phase7.unlockedRecipes.includes(id)) return;
 
-  let targetAdventurer = null;
-  if (recipe.output.equipment) {
-    targetAdventurer = typeof selectedAdventurer === "function"
-      ? selectedAdventurer()
-      : state.adventurers?.[0];
+  const phase3RecipeId = `phase7-${id}`;
 
-    if (!targetAdventurer) {
-      addLog(`${recipe.name} の装備先となる冒険者がいない。`);
-      return;
-    }
+  if (
+    typeof phase3Craft !== "function"
+  ) {
+    return;
   }
 
-  for (const [resource, amount] of Object.entries(recipe.inputs)) {
-    const current = Number(state.phase3?.resources?.[resource]) || 0;
-    if (current < amount) {
-      addLog(`${recipe.name} の素材が不足している。`);
-      return;
-    }
-  }
-
-  for (const [resource, amount] of Object.entries(recipe.inputs)) {
-    state.phase3.resources[resource] -= amount;
-  }
-
-  if (recipe.output.equipment) {
-    const name = recipe.output.equipment;
-
-    const adventurer = targetAdventurer;
-
-    const equipment = {
-      name,
-      type: name === "エーテルローブ" ? "armor" : "weapon",
-      slot: name === "エーテルローブ" ? "防具" : "武器",
-      rarity: "epic",
-      attack: name === "星鋼剣" ? 35 : 0,
-      defense: name === "エーテルローブ" ? 30 : 0,
-      enhance: 0,
-      enhanceMultiplier: 1
-    };
-
-    adventurer.equipment.push(equipment);
-
-    if (typeof phase5RegisterEquipment === "function") {
-      phase5RegisterEquipment(equipment);
-    }
-
-    addLog(`⚒️ ${name} を製作した。`);
-  } else {
-    Object.entries(recipe.output).forEach(([resource, amount]) => {
-      phase7AddResource(resource, amount);
-    });
-
-    addLog(`⚒️ ${recipe.name} を生産した。`);
-  }
-
+  phase3Craft(phase3RecipeId);
   phase7RefreshCollections();
 }
 

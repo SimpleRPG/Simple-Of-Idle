@@ -318,6 +318,15 @@ function phase3Craft(recipeId) {
 
   if (!recipe) return;
 
+  if (
+    recipe.phase7Id &&
+    !state.phase7?.unlockedRecipes?.includes(recipe.phase7Id)
+  ) {
+    addLog(`${recipe.name} はまだ解禁されていない。`);
+    phase3Render();
+    return;
+  }
+
   if (!phase3CanAfford(recipe.inputs)) {
     addLog(`${recipe.name} に必要な素材が足りない。`);
     phase3Render();
@@ -341,17 +350,40 @@ function phase3Craft(recipeId) {
   if (recipe.output.equipment) {
     const leader = selectedAdventurer();
     const isWeapon = recipe.output.equipment === "weapon";
+    const equipmentData = recipe.equipment || {};
+    const equipmentName =
+      equipmentData.name ||
+      (isWeapon ? "鉄製冒険剣" : "鉄製胸当て");
 
-    leader.equipment.push({
-      slot: isWeapon ? "武器" : "防具",
-      name: isWeapon ? "鉄製冒険剣" : "鉄製胸当て",
-      attack: isWeapon ? 12 + leader.level : 2,
-      defense: isWeapon ? 2 : 10 + leader.level,
+    const equipment = {
+      slot:
+        equipmentData.slot ||
+        (isWeapon ? "武器" : "防具"),
+      name: equipmentName,
+      type:
+        equipmentData.type ||
+        (isWeapon ? "weapon" : "armor"),
+      rarity:
+        equipmentData.rarity || "common",
+      attack:
+        Number.isFinite(equipmentData.attack)
+          ? equipmentData.attack
+          : (isWeapon ? 12 + leader.level : 2),
+      defense:
+        Number.isFinite(equipmentData.defense)
+          ? equipmentData.defense
+          : (isWeapon ? 2 : 10 + leader.level),
       id: `crafted-${Date.now()}-${Math.random()}`,
       level: leader.level,
       enhance: 0,
       enhanceMultiplier: 1
-    });
+    };
+
+    leader.equipment.push(equipment);
+
+    if (typeof phase5RegisterEquipment === "function") {
+      phase5RegisterEquipment(equipment);
+    }
 
     addLog(`${leader.name} が ${recipe.name} を製作した。`);
   } else {
@@ -464,6 +496,13 @@ function phase3RenderResources() {
 }
 
 function phase3RecipeHTML(recipe) {
+  if (
+    recipe.phase7Id &&
+    !state.phase7?.unlockedRecipes?.includes(recipe.phase7Id)
+  ) {
+    return "";
+  }
+
   const inputText = Object.entries(recipe.inputs).map(([id, amount]) =>
     `${id}: ${amount}`
   ).join(" / ");

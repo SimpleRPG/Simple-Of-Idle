@@ -1441,3 +1441,64 @@ Phase 7専用の独立した活動タイマー・遠征ループ・ボス戦ル�
 
 Phase 7の完了記録はPhase 7固有記録だけで完結させず、既存Phase 4のダンジョン・ボス進行記録にも保存する。
 
+
+
+## 56. Phase 7新生産の既存Phase 3生産処理統合
+
+Phase 7の新生産は独立した素材消費・装備生成処理を持たない。
+
+Phase 7生産定義は既存Phase 3の `PRODUCTION_RECIPES` / `CRAFT_RECIPES` へ登録し、既存 `phase3Craft()` を共通実行経路として利用する。
+
+### 素材生産
+
+Phase 7生産
+↓
+既存 `PRODUCTION_RECIPES`
+↓
+既存 `phase3Craft()`
+↓
+既存 `phase3CanAfford()`
+↓
+既存 `phase3Consume()`
+↓
+既存 `phase3AddResource()`
+↓
+既存Phase 3生産・倉庫・Phase 5図鑑
+
+### 装備製作
+
+Phase 7装備
+↓
+既存 `CRAFT_RECIPES`
+↓
+既存 `phase3Craft()`
+↓
+既存素材消費
+↓
+既存冒険者装備配列
+↓
+既存 `phase5RegisterEquipment()`
+↓
+既存装備表示・強化・図鑑
+
+Phase 7固有の `phase7Craft()` は独自の素材消費・装備生成を行わず、既存 `phase3Craft()` を呼び出す橋渡しだけを担当する。
+
+Phase 7研究完了による生産解禁状態は `state.phase7.unlockedRecipes` を既存生産処理側でも確認する。
+
+これにより、
+
+新世界素材
+↓
+既存倉庫
+↓
+既存生産レシピ
+↓
+既存クラフト処理
+↓
+既存装備・図鑑
+↓
+Phase 7コレクション
+
+というPhase 3〜7の統合経路を維持する。
+
+Phase 7だけの独立した生産・素材消費・装備生成システムを追加してはならない。
