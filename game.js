@@ -1207,6 +1207,11 @@ document.addEventListener("click", event => {
   if (!button) return;
 
   const action = button.dataset.action;
+  window.SimpleIdleErrorHandler?.setContext({
+    phase: "ゲーム操作",
+    operation: action,
+    file: "game.js"
+  });
 
   if (action === "select-adventurer") {
     selectAdventurer(Number(button.dataset.adventurer));
@@ -1221,6 +1226,8 @@ document.addEventListener("click", event => {
   } else if (action === "enhance") {
     enhanceEquipment(Number(button.dataset.adventurer), button.dataset.item);
   }
+
+  window.SimpleIdleErrorHandler?.clearContext();
 });
 
 document.getElementById("hireAdventurer").addEventListener("click", hireAdventurer);

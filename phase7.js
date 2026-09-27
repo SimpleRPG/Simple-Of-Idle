@@ -1491,6 +1491,11 @@ document.addEventListener("click", event => {
 
   const action = button.dataset.phase7Action;
   const id = button.dataset.id;
+  window.SimpleIdleErrorHandler?.setContext({
+    phase: "Phase 7",
+    operation: action,
+    file: "phase7.js"
+  });
 
   if (action === "world") {
     if (state.phase7.discoveredWorlds.includes(id)) {
@@ -1528,6 +1533,7 @@ document.addEventListener("click", event => {
   saveState();
   render();
   phase7Render();
+  window.SimpleIdleErrorHandler?.clearContext();
 });
 
 document.querySelectorAll(".tab").forEach(button => {
