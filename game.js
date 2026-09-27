@@ -876,14 +876,20 @@ function renderJobs() {
   document.getElementById("jobList").innerHTML = Object.entries(JOBS).map(([id, job]) => {
     const current = adventurer.job === id;
     const minimum = id === "adventurer" ? 1 : 3;
-    const phase7Unlocked =
+
+    const phase7Job =
       id.startsWith("astral-") ||
       id.startsWith("ether-") ||
       id.startsWith("world-") ||
-      id.startsWith("infinity-")
-        ? Boolean(state.phase7?.unlockedJobs?.includes(id))
-        : true;
-    const available = phase7Unlocked && adventurer.level >= minimum;
+      id.startsWith("infinity-");
+
+    const phase7Unlocked =
+      !phase7Job ||
+      Boolean(state.phase7?.unlockedJobs?.includes(id));
+
+    const available =
+      phase7Unlocked &&
+      adventurer.level >= minimum;
 
     return `
       <div class="choice ${current ? "current" : ""}">
@@ -891,17 +897,27 @@ function renderJobs() {
           <strong>${job.icon} ${job.name}</strong>
           <small>${job.description}</small>
         </div>
-        <button class="small-button" data-action="job" data-job="${id}" ${current || !available ? "disabled" : ""}>
-          ${current ? "現在" : !phase7Unlocked ? "未解禁" : `Lv.${minimum}から`}
+        <button
+          class="small-button"
+          data-action="job"
+          data-job="${id}"
+          ${current || !available ? "disabled" : ""}
+        >
+          ${current
+            ? "現在"
+            : !phase7Unlocked
+              ? "未解禁"
+              : `Lv.${minimum}から`}
         </button>
       </div>
     `;
   }).join("");
-}
 
   document.getElementById("enhanceInfo").textContent =
     `${adventurer.name} の装備を強化。鍛冶場と「鍛冶知識」でコストを下げられます。`;
-  document.getElementById("enhanceList").innerHTML = renderEquipmentList(adventurer, true);
+
+  document.getElementById("enhanceList").innerHTML =
+    renderEquipmentList(adventurer, true);
 }
 
 function renderSkills() {

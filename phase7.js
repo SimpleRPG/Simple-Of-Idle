@@ -538,17 +538,21 @@ function phase7Craft(id) {
 
     const adventurer = targetAdventurer;
 
-    adventurer.equipment.push({
+    const equipment = {
       name,
-      type: "weapon",
+      type: name === "エーテルローブ" ? "armor" : "weapon",
+      slot: name === "エーテルローブ" ? "防具" : "武器",
       rarity: "epic",
       attack: name === "星鋼剣" ? 35 : 0,
       defense: name === "エーテルローブ" ? 30 : 0,
-      enhance: 0
-    });
+      enhance: 0,
+      enhanceMultiplier: 1
+    };
+
+    adventurer.equipment.push(equipment);
 
     if (typeof phase5RegisterEquipment === "function") {
-      phase5RegisterEquipment(adventurer.equipment[adventurer.equipment.length - 1]);
+      phase5RegisterEquipment(equipment);
     }
 
     addLog(`⚒️ ${name} を製作した。`);
