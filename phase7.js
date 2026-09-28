@@ -606,7 +606,12 @@ function phase7ProcessStartupOffline(seconds) {
   const elapsed = Math.max(0, Number(seconds) || 0);
   if (elapsed <= 0) return;
 
-  phase7ProcessResearch(elapsed);
+  const researchSpeed =
+    typeof phase7ResearchSpeedMultiplier === "function"
+      ? phase7ResearchSpeedMultiplier()
+      : 1;
+
+  phase7ProcessResearch(elapsed * researchSpeed);
   phase7ProcessActivity(elapsed);
   phase7ProcessOffline(elapsed);
 }

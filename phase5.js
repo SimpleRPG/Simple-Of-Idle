@@ -677,29 +677,44 @@ document.addEventListener("click", event => {
 
   const action = button.dataset.phase5Action;
   const id = button.dataset.id;
+  const execute = createErrorSafeRetry(() => {
+    if (action === "pet-get") {
+      phase5CollectPet(id);
+    }
 
-  if (action === "pet-get") {
-    phase5CollectPet(id);
-    saveState();
-    render();
-    phase5Render();
-  }
+    if (action === "pet-level") {
+      phase5PetLevelUp(id);
+    }
 
-  if (action === "pet-level") {
-    phase5PetLevelUp(id);
-    saveState();
-    render();
-    phase5Render();
-  }
-
-  if (action === "title") {
-    if (state.phase5.titles.includes(id)) {
+    if (action === "title" && state.phase5.titles.includes(id)) {
       state.phase5.activeTitle = id;
       addLog(`🏅 称号「${PHASE5_TITLES.find(item => item.id === id)?.name || id}」を装備した。`);
-      saveState();
-      render();
-      phase5Render();
     }
+
+    saveState();
+    render();
+    phase5Render();
+  });
+
+  window.SimpleIdleErrorHandler?.setRetry(null);
+  window.SimpleIdleErrorHandler?.setContext({
+    phase: "Phase 5",
+    operation: action,
+    file: "phase5.js"
+  });
+  window.SimpleIdleErrorHandler?.setRetry(execute);
+
+  try {
+    execute();
+    window.SimpleIdleErrorHandler?.clearContext();
+    window.SimpleIdleErrorHandler?.setRetry(null);
+  } catch (error) {
+    window.SimpleIdleErrorHandler?.report(error, {
+      phase: "Phase 5",
+      operation: action,
+      file: "phase5.js"
+    });
+    throw error;
   }
 });
 

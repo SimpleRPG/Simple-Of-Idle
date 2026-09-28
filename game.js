@@ -1284,14 +1284,18 @@ document.getElementById("hireAdventurer").addEventListener("click", () => {
 });
 
 document.getElementById("manualSave").addEventListener("click", () => {
-  window.SimpleIdleErrorHandler?.setRetry(() => saveState());
+  const execute = createErrorSafeRetry(() => saveState());
+  window.SimpleIdleErrorHandler?.setRetry(null);
   window.SimpleIdleErrorHandler?.setContext({
     phase: "セーブ処理",
     operation: "手動保存",
     file: "game.js"
   });
+  window.SimpleIdleErrorHandler?.setRetry(execute);
   try {
-    saveState();
+    execute();
+    window.SimpleIdleErrorHandler?.clearContext();
+    window.SimpleIdleErrorHandler?.setRetry(null);
   } catch (error) {
     window.SimpleIdleErrorHandler?.report(error, {
       phase: "セーブ処理",

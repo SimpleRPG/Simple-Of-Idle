@@ -706,29 +706,51 @@ document.addEventListener("click", event => {
   if (!button) return;
 
   const action = button.dataset.phase6Action;
+  const execute = createErrorSafeRetry(() => {
+    if (action === "rebirth") {
+      phase6DoRebirth();
+    }
 
-  if (action === "rebirth") {
-    phase6DoRebirth();
+    if (action === "awakening") {
+      phase6DoAwakening();
+    }
+
+    if (action === "transcendence") {
+      phase6DoTranscendence();
+    }
+
+    if (action === "node") {
+      phase6SpendNode(
+        button.dataset.phase6Type,
+        button.dataset.phase6Id
+      );
+    }
+
+    saveState();
+    render();
+    phase6Render();
+  });
+
+  window.SimpleIdleErrorHandler?.setRetry(null);
+  window.SimpleIdleErrorHandler?.setContext({
+    phase: "Phase 6",
+    operation: action,
+    file: "phase6.js"
+  });
+  window.SimpleIdleErrorHandler?.setRetry(execute);
+
+  try {
+    execute();
+    window.SimpleIdleErrorHandler?.clearContext();
+    window.SimpleIdleErrorHandler?.setRetry(null);
+  } catch (error) {
+    window.SimpleIdleErrorHandler?.report(error, {
+      phase: "Phase 6",
+      operation: action,
+      file: "phase6.js"
+    });
+    throw error;
   }
-
-  if (action === "awakening") {
-    phase6DoAwakening();
-  }
-
-  if (action === "transcendence") {
-    phase6DoTranscendence();
-  }
-
-  if (action === "node") {
-    phase6SpendNode(
-      button.dataset.phase6Type,
-      button.dataset.phase6Id
-    );
-  }
-
-  saveState();
-  render();
-  phase6Render();
 });
 
 document.querySelectorAll(".tab").forEach(button => {
