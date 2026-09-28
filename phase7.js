@@ -600,6 +600,17 @@ function phase7ProcessOffline(seconds) {
   });
 }
 
+function phase7ProcessStartupOffline(seconds) {
+  phase7EnsureState();
+
+  const elapsed = Math.max(0, Number(seconds) || 0);
+  if (elapsed <= 0) return;
+
+  phase7ProcessResearch(elapsed);
+  phase7ProcessActivity(elapsed);
+  phase7ProcessOffline(elapsed);
+}
+
 function phase7ResearchPoints() {
   return Number(state.phase4?.researchPoints) || 0;
 }
@@ -1560,7 +1571,7 @@ const startupOfflineSeconds =
   );
 
 if (startupOfflineSeconds > 0) {
-  phase7ProcessOffline(startupOfflineSeconds);
+  phase7ProcessStartupOffline(startupOfflineSeconds);
   window.__simpleOfIdleStartupOfflineSeconds = 0;
 }
 
