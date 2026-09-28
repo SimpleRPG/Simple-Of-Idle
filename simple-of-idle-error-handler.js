@@ -103,6 +103,8 @@
       }
       try {
         retry();
+        clearContext();
+        setRetry(null);
       } catch (error) {
         report(error, context);
       }
