@@ -1491,7 +1491,7 @@ document.addEventListener("click", event => {
 
   const action = button.dataset.phase7Action;
   const id = button.dataset.id;
-  const execute = () => {
+  const execute = createErrorSafeRetry(() => {
     if (action === "world") {
       if (state.phase7.discoveredWorlds.includes(id)) {
         state.phase7.selectedWorld = id;
@@ -1511,7 +1511,7 @@ document.addEventListener("click", event => {
     saveState();
     render();
     phase7Render();
-  };
+  });
 
   window.SimpleIdleErrorHandler?.setRetry(null);
   window.SimpleIdleErrorHandler?.setContext({

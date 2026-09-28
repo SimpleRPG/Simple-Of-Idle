@@ -187,6 +187,21 @@ function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
+function createErrorSafeRetry(operation) {
+  const snapshot = clone(state);
+
+  return () => {
+    state = clone(snapshot);
+
+    try {
+      return operation();
+    } catch (error) {
+      state = clone(snapshot);
+      throw error;
+    }
+  };
+}
+
 function normalizeAdventurer(adventurer, fallbackId) {
   const result = {
     id: Number(adventurer?.id) || fallbackId,
@@ -1207,7 +1222,7 @@ document.addEventListener("click", event => {
   if (!button) return;
 
   const action = button.dataset.action;
-  const execute = () => {
+  const execute = createErrorSafeRetry(() => {
     if (action === "select-adventurer") {
       selectAdventurer(Number(button.dataset.adventurer));
     } else if (action === "job") {
@@ -1221,7 +1236,7 @@ document.addEventListener("click", event => {
     } else if (action === "enhance") {
       enhanceEquipment(Number(button.dataset.adventurer), button.dataset.item);
     }
-  };
+  });
 
   window.SimpleIdleErrorHandler?.setRetry(null);
   window.SimpleIdleErrorHandler?.setContext({
@@ -1246,7 +1261,7 @@ document.addEventListener("click", event => {
 });
 
 document.getElementById("hireAdventurer").addEventListener("click", () => {
-  const execute = () => hireAdventurer();
+  const execute = createErrorSafeRetry(() => hireAdventurer());
   window.SimpleIdleErrorHandler?.setRetry(null);
   window.SimpleIdleErrorHandler?.setContext({
     phase: "冒険者管理",
@@ -1288,7 +1303,7 @@ document.getElementById("manualSave").addEventListener("click", () => {
 });
 
 document.getElementById("exportSave").addEventListener("click", () => {
-  const execute = () => exportSave();
+  const execute = createErrorSafeRetry(() => exportSave());
   window.SimpleIdleErrorHandler?.setRetry(null);
   window.SimpleIdleErrorHandler?.setContext({
     phase: "セーブ処理",
@@ -1319,10 +1334,11 @@ document.getElementById("importSave").addEventListener("change", event => {
     operation: "セーブデータの読み込み",
     file: "game.js"
   });
-  window.SimpleIdleErrorHandler?.setRetry(() => importSaveFile(file));
+  const execute = createErrorSafeRetry(() => importSaveFile(file));
+  window.SimpleIdleErrorHandler?.setRetry(execute);
 
   try {
-    importSaveFile(file);
+    execute();
   } catch (error) {
     window.SimpleIdleErrorHandler?.report(error, {
       phase: "セーブ処理",
@@ -1336,7 +1352,7 @@ document.getElementById("importSave").addEventListener("change", event => {
 });
 
 document.getElementById("resetSave").addEventListener("click", () => {
-  const execute = () => resetSave();
+  const execute = createErrorSafeRetry(() => resetSave());
   window.SimpleIdleErrorHandler?.setRetry(null);
   window.SimpleIdleErrorHandler?.setContext({
     phase: "セーブ処理",
@@ -1359,7 +1375,7 @@ document.getElementById("resetSave").addEventListener("click", () => {
 });
 
 document.getElementById("deleteLegacySave").addEventListener("click", () => {
-  const execute = () => deleteLegacySave();
+  const execute = createErrorSafeRetry(() => deleteLegacySave());
   window.SimpleIdleErrorHandler?.setRetry(null);
   window.SimpleIdleErrorHandler?.setContext({
     phase: "セーブ処理",
