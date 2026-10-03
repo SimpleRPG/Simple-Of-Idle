@@ -179,7 +179,7 @@ const DEFAULT_STATE = {
 };
 
 let recoveredFromBackup = false;
-let state = loadState();
+var state = loadState();
 let lastTick = Date.now();
 let saveTimer = 0;
 
