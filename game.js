@@ -349,8 +349,11 @@ function loadState() {
 }
 
 function saveState() {
-  state.lastSavedAt = Date.now();
-  const serialized = JSON.stringify(state);
+  const savedAt = Date.now();
+  const serialized = JSON.stringify({
+    ...state,
+    lastSavedAt: savedAt
+  });
 
   try {
     const previous = localStorage.getItem(SAVE_KEY);
@@ -365,6 +368,8 @@ function saveState() {
       localStorage.setItem(SAVE_BACKUP_KEY, serialized);
       recoveredFromBackup = false;
     }
+
+    state.lastSavedAt = savedAt;
 
     const indicator = document.getElementById("saveIndicator");
     const lastSave = document.getElementById("lastSave");
@@ -486,6 +491,10 @@ function selectedAdventurer() {
   return state.adventurers.find(a => a.id === state.selectedAdventurerId) || state.adventurers[0];
 }
 
+function jobDefinition(adventurer) {
+  return JOBS[adventurer?.job] || JOBS.adventurer;
+}
+
 function skillEffects(adventurer) {
   const result = {
     attack: 0,
@@ -540,7 +549,7 @@ function baseEffects() {
 }
 
 function adventurerStats(adventurer) {
-  const job = JOBS[adventurer.job] || JOBS.adventurer;
+  const job = jobDefinition(adventurer);
   const skills = skillEffects(adventurer);
   const base = baseEffects();
   const equipmentAttack = adventurer.equipment.reduce((sum, item) => sum + (item.attack || 0) * (item.enhanceMultiplier || 1), 0);
@@ -1034,8 +1043,8 @@ function renderAdventurers() {
     return `
       <div class="adventurer-card">
         <div>
-          <strong>${JOBS[adventurer.job].icon} ${adventurer.name}</strong>
-          <small>Lv.${adventurer.level} / ${JOBS[adventurer.job].name} / XP ${Math.floor(adventurer.xp).toLocaleString()} / ${required.toLocaleString()}</small>
+          <strong>${jobDefinition(adventurer).icon} ${adventurer.name}</strong>
+          <small>Lv.${adventurer.level} / ${jobDefinition(adventurer).name} / XP ${Math.floor(adventurer.xp).toLocaleString()} / ${required.toLocaleString()}</small>
           <div class="adventurer-meta">
             <span class="meta-chip">ATK ${stats.attack}</span>
             <span class="meta-chip">DEF ${stats.defense}</span>
@@ -1327,6 +1336,10 @@ document.getElementById("exportSave").addEventListener("click", () => {
     });
     throw error;
   }
+});
+
+document.getElementById("importSaveButton").addEventListener("click", () => {
+  document.getElementById("importSave").click();
 });
 
 document.getElementById("importSave").addEventListener("change", event => {

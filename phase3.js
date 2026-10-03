@@ -447,7 +447,7 @@ function phase3RenderGathering() {
     return `
       <div class="gathering-row">
         <div>
-          <strong>${JOBS[adventurer.job].icon} ${adventurer.name}</strong>
+          <strong>${(JOBS[adventurer.job] || JOBS.adventurer).icon} ${adventurer.name}</strong>
           <small>${phase3AssignmentName(current)} / 採取効率 ${phase3GatherRate(adventurer).toFixed(2)}</small>
         </div>
         <div class="gathering-actions">${buttons}</div>

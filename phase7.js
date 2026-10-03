@@ -930,10 +930,14 @@ function phase7JobEffects() {
 function phase7ResearchSpeedMultiplier() {
   const jobEffects = phase7JobEffects();
   const permanent = phase7Effects();
+  const phase6 = typeof phase6Effects === "function"
+    ? phase6Effects()
+    : {};
 
   return Math.max(
     0.1,
     1 +
+      Number(phase6.research || 0) +
       Number(jobEffects.research || 0) +
       Number(permanent.research || 0)
   );

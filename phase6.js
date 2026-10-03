@@ -534,27 +534,6 @@ function phase6PatchResourceGain() {
   window.__phase6ResourcePatched = true;
 }
 
-function phase6PatchResearch() {
-  if (typeof phase4StartResearch !== "function") return;
-  if (window.__phase6ResearchPatched) return;
-
-  const original = phase4StartResearch;
-
-  phase4StartResearch = function(...args) {
-    const effects = phase6Effects();
-    const result = original.apply(this, args);
-
-    if (state.phase4?.activeResearch) {
-      state.phase4.activeResearch.phase6Speed =
-        1 + Number(effects.research || 0);
-    }
-
-    return result;
-  };
-
-  window.__phase6ResearchPatched = true;
-}
-
 function phase6RenderTree(rootId, nodes, spent, points, type) {
   const root = document.getElementById(rootId);
   if (!root) return;
@@ -765,7 +744,6 @@ phase6EnsureState();
 phase6RefreshUnlocks();
 phase6PatchStats();
 phase6PatchResourceGain();
-phase6PatchResearch();
 phase6Render();
 saveState();
 
