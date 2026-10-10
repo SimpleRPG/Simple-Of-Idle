@@ -972,9 +972,10 @@ function renderHome() {
   document.getElementById("xpText").textContent =
     `${Math.floor(leader.xp).toLocaleString()} / ${required.toLocaleString()} XP`;
 
-  document.getElementById("className").textContent = JOBS[leader.job].name;
+  const leaderJob = jobDefinition(leader);
+  document.getElementById("className").textContent = leaderJob.name;
   document.getElementById("homeCharacterName").textContent = leader.name;
-  document.getElementById("homeCharacterText").textContent = JOBS[leader.job].description;
+  document.getElementById("homeCharacterText").textContent = leaderJob.description;
   document.getElementById("attack").textContent = guild.attack;
   document.getElementById("defense").textContent = guild.defense;
   document.getElementById("speed").textContent = guild.speed.toFixed(2);
