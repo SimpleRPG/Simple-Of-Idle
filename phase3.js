@@ -222,6 +222,12 @@ function phase3GatherRate(adventurer) {
 }
 
 function phase3ProcessGathering(seconds) {
+  const petEffects = typeof phase5PetEffects === "function" ? phase5PetEffects() : {};
+  const permanentEffects = typeof phase6Effects === "function" ? phase6Effects() : {};
+  const gatheringMultiplier =
+    1 +
+    Math.max(0, Number(petEffects.gathering) || 0) +
+    Math.max(0, Number(permanentEffects.gathering) || 0);
   const maxSeconds = Math.min(seconds, 12 * 60 * 60);
   let gathered = 0;
 
@@ -234,7 +240,7 @@ function phase3ProcessGathering(seconds) {
     const rate = phase3GatherRate(adventurer);
 
     Object.entries(job.outputs).forEach(([resource, amount]) => {
-      gathered += phase3AddResource(resource, cycles * amount * rate);
+      gathered += phase3AddResource(resource, cycles * amount * rate * gatheringMultiplier);
     });
   });
 
@@ -242,6 +248,13 @@ function phase3ProcessGathering(seconds) {
 }
 
 function phase3ProcessOffline() {
+  // 後段Phaseの効果と共通処理が登録されるまでは、処理時刻を進めない。
+  if (
+    typeof phase5PetEffects !== "function" ||
+    typeof phase6Effects !== "function" ||
+    typeof phase7ProcessOffline !== "function"
+  ) return;
+
   const now = Date.now();
   const previous = state.phase3.lastProcessedAt || now;
   const elapsed = Math.max(0, (now - previous) / 1000);

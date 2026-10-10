@@ -723,6 +723,12 @@ function phase4RollRandomEvent() {
 }
 
 function phase4ProcessOffline() {
+  // Phase 6/7の効果・既存処理への接続が登録されるまでは、処理時刻を進めない。
+  if (
+    typeof phase6Effects !== "function" ||
+    typeof phase7ProcessOffline !== "function"
+  ) return;
+
   const now = Date.now();
   const previous = Number(state.phase4.lastProcessedAt) || now;
   const elapsed = Math.max(0, (now - previous) / 1000);

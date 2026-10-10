@@ -497,6 +497,14 @@ function phase5PatchStats() {
   adventurerStats = function(adventurer) {
     const result = original(adventurer);
     const pet = phase5PetEffects();
+    const collectionBonus =
+      (Number(state.phase5?.collectionBonus) || 0) +
+      (typeof phase6Effects === "function"
+        ? (Number(phase6Effects().collection) || 0)
+        : 0) +
+      (typeof phase7Effects === "function"
+        ? (Number(phase7Effects().collection) || 0)
+        : 0);
     const achievementAttack = state.phase5?.achievements
       ? Object.entries(state.phase5.achievements).filter(([, value]) => value).reduce((sum, [id]) => {
           const achievement = PHASE5_ACHIEVEMENTS.find(item => item.id === id);
@@ -508,10 +516,10 @@ function phase5PatchStats() {
 
     result.speed = Math.max(
       0.1,
-      result.speed * (1 + pet.exploration + (state.phase5?.collectionBonus || 0) * 0.2)
+      result.speed * (1 + pet.exploration + collectionBonus * 0.2)
     );
 
-    result.xpMultiplier *= 1 + (state.phase5?.collectionBonus || 0) * 0.25;
+    result.xpMultiplier *= 1 + collectionBonus * 0.25;
     return result;
   };
 
@@ -535,28 +543,6 @@ function phase5PatchResourceGain() {
     window.__phase5ResourcePatched = true;
   }
 
-  // 採取補正は既存採取処理の実行中にだけ適用し、戦闘・イベント・クラフト報酬へ波及させない。
-  if (typeof phase3ProcessGathering === "function" && !window.__phase5GatheringPatched) {
-    const originalGathering = phase3ProcessGathering;
-    phase3ProcessGathering = function(...args) {
-      const originalAddResource = phase3AddResource;
-      const gatheringBonus = Math.max(0, Number(phase5PetEffects().gathering) || 0);
-      phase3AddResource = function(id, amount, ...resourceArgs) {
-        return originalAddResource.call(
-          this,
-          id,
-          (Number(amount) || 0) * (1 + gatheringBonus),
-          ...resourceArgs
-        );
-      };
-      try {
-        return originalGathering.apply(this, args);
-      } finally {
-        phase3AddResource = originalAddResource;
-      }
-    };
-    window.__phase5GatheringPatched = true;
-  }
 }
 
 function phase5RenderMonster() {

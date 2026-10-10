@@ -25,14 +25,16 @@ const PHASE7_WORLDS = [
     name: "始原世界",
     description: "これまでの冒険を基盤にした既存世界。",
     requirement: () => true,
-    requiredTranscendence: 0
+    requiredTranscendence: 0,
+    requiredWorldAccess: 0
   },
   {
     id: "astral",
     name: "星界",
     description: "超越の力で接続された新世界。星鉱石と星獣が存在する。",
     requirement: () => phase7TranscendenceCount() >= 1,
-    requiredTranscendence: 1
+    requiredTranscendence: 1,
+    requiredWorldAccess: 1
   },
   {
     id: "ether",
@@ -41,7 +43,8 @@ const PHASE7_WORLDS = [
     requirement: () =>
       phase7TranscendenceCount() >= 3 &&
       state.phase7.completedResearch.length >= 2,
-    requiredTranscendence: 3
+    requiredTranscendence: 3,
+    requiredWorldAccess: 1
   },
   {
     id: "infinity",
@@ -50,7 +53,8 @@ const PHASE7_WORLDS = [
     requirement: () =>
       phase7TranscendenceCount() >= 5 &&
       state.phase7.completedResearch.length >= 4,
-    requiredTranscendence: 5
+    requiredTranscendence: 5,
+    requiredWorldAccess: 2
   }
 ];
 
@@ -530,7 +534,16 @@ function phase7WorldUnlocked(id) {
   const world = PHASE7_WORLDS.find(item => item.id === id);
   if (!world) return false;
 
-  return world.requirement();
+  // 既に到達済みの保存データは、追加の解禁条件で閉じ直さない。
+  if (state.phase7?.discoveredWorlds?.includes(id)) return true;
+
+  const effects = typeof phase6Effects === "function" ? phase6Effects() : {};
+  const worldAccess = Number(effects.world) || 0;
+
+  return (
+    worldAccess >= Number(world.requiredWorldAccess || 0) &&
+    world.requirement()
+  );
 }
 
 function phase7RefreshUnlocks() {
@@ -544,8 +557,13 @@ function phase7RefreshUnlocks() {
     }
   });
 
+  const classAccess =
+    typeof phase6Effects === "function" &&
+    Number(phase6Effects().class || 0) > 0;
+
   PHASE7_JOBS.forEach(job => {
-    if (state.phase7.discoveredWorlds.includes(job.world) &&
+    if (classAccess &&
+        state.phase7.discoveredWorlds.includes(job.world) &&
         !state.phase7.unlockedJobs.includes(job.id)) {
       state.phase7.unlockedJobs.push(job.id);
       addLog(`⚔️ 新職業「${PHASE7_JOB_REGISTRY[job.id]?.name || job.id}」が解禁された。`);
@@ -600,21 +618,7 @@ function phase7ProcessOffline(seconds) {
   });
 }
 
-function phase7ProcessStartupOffline(seconds) {
-  phase7EnsureState();
 
-  const elapsed = Math.max(0, Number(seconds) || 0);
-  if (elapsed <= 0) return;
-
-  const researchSpeed =
-    typeof phase7ResearchSpeedMultiplier === "function"
-      ? phase7ResearchSpeedMultiplier()
-      : 1;
-
-  phase7ProcessResearch(elapsed * researchSpeed);
-  phase7ProcessActivity(elapsed);
-  phase7ProcessOffline(elapsed);
-}
 
 function phase7ResearchPoints() {
   return Number(state.phase4?.researchPoints) || 0;
@@ -946,10 +950,12 @@ function phase7ResearchSpeedMultiplier() {
 function phase7ProductionMultiplier() {
   const jobEffects = phase7JobEffects();
   const permanent = phase7Effects();
+  const phase6 = typeof phase6Effects === "function" ? phase6Effects() : {};
 
   return Math.max(
     0.1,
     1 +
+      Number(phase6.production || 0) +
       Number(jobEffects.production || 0) +
       Number(permanent.production || 0)
   );
@@ -958,10 +964,12 @@ function phase7ProductionMultiplier() {
 function phase7DiscoveryMultiplier() {
   const jobEffects = phase7JobEffects();
   const permanent = phase7Effects();
+  const phase6 = typeof phase6Effects === "function" ? phase6Effects() : {};
 
   return Math.max(
     0.1,
     1 +
+      Number(phase6.discovery || 0) +
       Number(jobEffects.discovery || 0) +
       Number(permanent.discovery || 0)
   );
@@ -1232,7 +1240,7 @@ function phase7RenderWorlds() {
     return `
       <div class="phase7-card ${unlocked ? "" : "locked"}">
         <strong>${unlocked ? "🌌" : "🔒"} ${unlocked ? world.name : "未解禁世界"}</strong>
-        <small>${unlocked ? world.description : `必要超越: ${world.requiredTranscendence}回`}</small>
+        <small>${unlocked ? world.description : `必要超越: ${world.requiredTranscendence}回 / 世界アクセスLv.${world.requiredWorldAccess}`}</small>
         ${unlocked ? `<span class="phase7-chip">${selected ? "選択中" : "到達済み"}</span>` : ""}
         ${unlocked && !selected ? `
           <button class="small-button"
@@ -1570,19 +1578,9 @@ phase7PatchStats();
 phase7PatchProduction();
 phase7PatchOfflineProcessing();
 
-// game.jsが起動時に算出した同一オフライン時間を、
-// Phase 7ロード後に一度だけ新世界素材へ反映する。
-// Phase 7独自の時計や別オフライン経路は追加しない。
-const startupOfflineSeconds =
-  Math.max(
-    0,
-    Number(window.__simpleOfIdleStartupOfflineSeconds) || 0
-  );
-
-if (startupOfflineSeconds > 0) {
-  phase7ProcessStartupOffline(startupOfflineSeconds);
-  window.__simpleOfIdleStartupOfflineSeconds = 0;
-}
+// Phase 3/4の保存済み処理時刻を使い、全補正の登録後に共通経路を一度だけ進める。
+phase3ProcessOffline();
+phase4ProcessOffline();
 
 phase7Render();
 saveState();

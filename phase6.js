@@ -173,10 +173,10 @@ const PHASE6_TRANSCENDENCE_NODES = [
   {
     id: "transcendence-infinity",
     name: "無限への扉",
-    description: "次の世界・上位プレステージを受け入れる恒久枠。",
+    description: "無限界へのアクセス権を追加する。",
     cost: 5,
     requires: "transcendence-world",
-    effect: { world: 1, prestige: 1 }
+    effect: { world: 1 }
   }
 ];
 
@@ -310,17 +310,35 @@ function phase6RebirthRequirement() {
 }
 
 function phase6AwakeningRequirement() {
+  const rebirthEffects = phase6TreeEffect(
+    PHASE6_REBIRTH_NODES,
+    state.phase6.rebirthSpent
+  );
+  const requiredRebirths = Math.max(
+    1,
+    5 - Math.floor(Number(rebirthEffects.prestige) || 0)
+  );
+
   return {
     unlocked:
-      state.phase6.rebirthCount >= 5 &&
+      state.phase6.rebirthCount >= requiredRebirths &&
       phase6TotalTreePoints(PHASE6_REBIRTH_NODES, state.phase6.rebirthSpent) >= 5
   };
 }
 
 function phase6TranscendenceRequirement() {
+  const awakeningEffects = phase6TreeEffect(
+    PHASE6_AWAKENING_NODES,
+    state.phase6.awakeningSpent
+  );
+  const requiredAwakenings = Math.max(
+    1,
+    5 - Math.floor(Number(awakeningEffects.prestige) || 0)
+  );
+
   return {
     unlocked:
-      state.phase6.awakeningCount >= 5 &&
+      state.phase6.awakeningCount >= requiredAwakenings &&
       phase6TotalTreePoints(PHASE6_AWAKENING_NODES, state.phase6.awakeningSpent) >= 5
   };
 }
@@ -515,22 +533,27 @@ function phase6PatchStats() {
   window.__phase6StatsPatched = true;
 }
 
-function phase6PatchResourceGain() {
-  if (typeof phase3AddResource !== "function") return;
-  if (window.__phase6ResourcePatched) return;
+function phase6ActivitySeconds(seconds) {
+  const elapsed = Math.max(0, Number(seconds) || 0);
+  const activityType = state.phase4?.activeActivity?.type;
+  if (!["dungeon", "boss", "phase7-dungeon", "phase7-boss"].includes(activityType)) {
+    return elapsed;
+  }
 
-  const original = phase3AddResource;
+  const effects = phase6Effects();
+  return elapsed * (1 + Math.max(0, Number(effects.dungeon) || 0));
+}
 
-  phase3AddResource = function(id, amount, ...args) {
-    const effects = phase6Effects();
-    const adjusted =
-      (Number(amount) || 0) *
-      (1 + Number(effects.gathering || 0) + Number(effects.production || 0));
+function phase6PatchActivityProgress() {
+  if (typeof phase4ProcessActivity !== "function") return;
+  if (window.__phase6ActivityPatched) return;
 
-    return original.call(this, id, adjusted, ...args);
+  const original = phase4ProcessActivity;
+  phase4ProcessActivity = function phase6ActivityWrapper(seconds, ...args) {
+    return original.call(this, phase6ActivitySeconds(seconds), ...args);
   };
 
-  window.__phase6ResourcePatched = true;
+  window.__phase6ActivityPatched = true;
 }
 
 function phase6RenderTree(rootId, nodes, spent, points, type) {
@@ -742,7 +765,7 @@ document.querySelectorAll(".tab").forEach(button => {
 phase6EnsureState();
 phase6RefreshUnlocks();
 phase6PatchStats();
-phase6PatchResourceGain();
+phase6PatchActivityProgress();
 phase6Render();
 saveState();
 
