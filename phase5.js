@@ -1,4 +1,4 @@
-const PHASE5_VERSION = 1;
+const PHASE5_VERSION = 2;
 
 const PHASE5_MATERIALS = [
   { id: "wood", name: "木材", source: "木材収集・探索", description: "建築・加工に使う基本資源。" },
@@ -122,21 +122,30 @@ const PHASE5_DEFAULT = {
   titles: [],
   activeTitle: null,
   collectionBonus: 0,
+  equipmentInstances: {},
+  equipmentCountMigrationPending: false,
   lastProcessedAt: Date.now()
 };
 
 function phase5EnsureState() {
+  const previous = state.phase5 || {};
+  const needsEquipmentMigration =
+    !Object.prototype.hasOwnProperty.call(previous, "equipmentInstances");
+
   state.phase5 = {
     ...clone(PHASE5_DEFAULT),
-    ...(state.phase5 || {}),
-    monsters: { ...PHASE5_DEFAULT.monsters, ...(state.phase5?.monsters || {}) },
-    equipment: { ...PHASE5_DEFAULT.equipment, ...(state.phase5?.equipment || {}) },
-    materials: { ...PHASE5_DEFAULT.materials, ...(state.phase5?.materials || {}) },
-    discoveries: Array.isArray(state.phase5?.discoveries) ? state.phase5.discoveries : [],
-    pets: Array.isArray(state.phase5?.pets) ? state.phase5.pets : [],
-    petLevels: { ...(state.phase5?.petLevels || {}) },
-    achievements: { ...(state.phase5?.achievements || {}) },
-    titles: Array.isArray(state.phase5?.titles) ? state.phase5.titles : []
+    ...previous,
+    monsters: { ...PHASE5_DEFAULT.monsters, ...(previous.monsters || {}) },
+    equipment: { ...PHASE5_DEFAULT.equipment, ...(previous.equipment || {}) },
+    materials: { ...PHASE5_DEFAULT.materials, ...(previous.materials || {}) },
+    discoveries: Array.isArray(previous.discoveries) ? previous.discoveries : [],
+    pets: Array.isArray(previous.pets) ? previous.pets : [],
+    petLevels: { ...(previous.petLevels || {}) },
+    achievements: { ...(previous.achievements || {}) },
+    titles: Array.isArray(previous.titles) ? previous.titles : [],
+    equipmentInstances: { ...(previous.equipmentInstances || {}) },
+    equipmentCountMigrationPending:
+      Boolean(previous.equipmentCountMigrationPending) || needsEquipmentMigration
   };
   state.phase5.version = PHASE5_VERSION;
 }
@@ -184,6 +193,68 @@ function phase5CurrentMonsterId() {
   return mapping[zoneName] || "slime";
 }
 
+function phase5MigrateEquipmentTracking() {
+  if (!state.phase5.equipmentCountMigrationPending) return;
+
+  const seenIds = new Set();
+  const instanceRegistry = {};
+  const heldCounts = {};
+  const heldBestEnhance = {};
+
+  state.adventurers.forEach(adventurer => {
+    (adventurer.equipment || []).forEach(item => {
+      if (!item?.name) return;
+
+      let instanceId = typeof item.id === "string" ? item.id.trim() : "";
+      if (!instanceId || seenIds.has(instanceId)) {
+        do {
+          instanceId = `phase5-legacy-${adventurer.id}-${Date.now()}-${Math.random()}`;
+        } while (seenIds.has(instanceId));
+        item.id = instanceId;
+      }
+
+      seenIds.add(instanceId);
+      instanceRegistry[instanceId] = String(item.name);
+      heldCounts[item.name] = (heldCounts[item.name] || 0) + 1;
+      heldBestEnhance[item.name] = Math.max(
+        heldBestEnhance[item.name] || 0,
+        Number(item.enhance) || 0
+      );
+    });
+  });
+
+  Object.entries(state.phase5.equipment || {}).forEach(([name, savedRecord]) => {
+    const record = savedRecord && typeof savedRecord === "object"
+      ? savedRecord
+      : { firstObtainedAt: Date.now(), count: 0, bestEnhance: 0 };
+    const oldCount = Number(record.count) || 0;
+    record.count = Math.max(heldCounts[name] || 0, oldCount > 0 ? 1 : 0);
+    record.bestEnhance = Math.max(
+      Number(record.bestEnhance) || 0,
+      heldBestEnhance[name] || 0
+    );
+    if (!record.firstObtainedAt) record.firstObtainedAt = Date.now();
+    state.phase5.equipment[name] = record;
+  });
+
+  Object.entries(heldCounts).forEach(([name, count]) => {
+    const record = state.phase5.equipment[name] || {
+      firstObtainedAt: Date.now(),
+      count: 0,
+      bestEnhance: 0
+    };
+    record.count = count;
+    record.bestEnhance = Math.max(
+      Number(record.bestEnhance) || 0,
+      heldBestEnhance[name] || 0
+    );
+    state.phase5.equipment[name] = record;
+  });
+
+  state.phase5.equipmentInstances = instanceRegistry;
+  state.phase5.equipmentCountMigrationPending = false;
+}
+
 function phase5RegisterEquipment(item) {
   if (!item?.name) return;
   phase5EnsureState();
@@ -193,7 +264,17 @@ function phase5RegisterEquipment(item) {
     count: 0,
     bestEnhance: 0
   };
-  existing.count += 1;
+
+  let instanceId = typeof item.id === "string" ? item.id.trim() : "";
+  if (!instanceId) {
+    instanceId = `phase5-item-${Date.now()}-${Math.random()}`;
+    item.id = instanceId;
+  }
+
+  if (!Object.prototype.hasOwnProperty.call(state.phase5.equipmentInstances, instanceId)) {
+    state.phase5.equipmentInstances[instanceId] = id;
+    existing.count += 1;
+  }
   existing.bestEnhance = Math.max(existing.bestEnhance, Number(item.enhance) || 0);
   state.phase5.equipment[id] = existing;
 }
@@ -336,12 +417,7 @@ function phase5CheckAchievements() {
     state.phase5.achievements[achievement.id] = true;
     addLog(`🏆 実績「${achievement.name}」を達成した。`);
 
-    if (achievement.reward?.attack) {
-      state.adventurers.forEach(adventurer => {
-        adventurer.phase5PermanentAttack =
-          (Number(adventurer.phase5PermanentAttack) || 0) + achievement.reward.attack;
-      });
-    }
+    // 攻撃力報酬はphase5PatchStats()で取得済み実績から一度だけ合算する。
 
     phase5UpdateCollectionBonus();
   });
@@ -363,6 +439,7 @@ function phase5CheckTitles() {
 
 function phase5RegisterAllExisting() {
   phase5EnsureState();
+  phase5MigrateEquipmentTracking();
 
   state.adventurers.forEach(adventurer => {
     (adventurer.equipment || []).forEach(item => phase5RegisterEquipment(item));
@@ -388,10 +465,6 @@ function phase5PatchBattle() {
   const original = processBattle;
   processBattle = function(...args) {
     const beforeKills = state.kills;
-    const beforeEquipment = state.adventurers.reduce(
-      (sum, adventurer) => sum + adventurer.equipment.length, 0
-    );
-
     const result = original.apply(this, args);
 
     const gainedKills = Math.max(0, state.kills - beforeKills);
@@ -399,15 +472,10 @@ function phase5PatchBattle() {
       phase5RegisterMonster(phase5CurrentMonsterId(), { kills: gainedKills });
     }
 
-    const afterEquipment = state.adventurers.reduce(
-      (sum, adventurer) => sum + adventurer.equipment.length, 0
-    );
-
-    if (afterEquipment > beforeEquipment) {
-      state.adventurers.forEach(adventurer => {
-        (adventurer.equipment || []).forEach(item => phase5RegisterEquipment(item));
-      });
-    }
+    // 固有item.idで重複を排除するため、満杯で装備が入れ替わる場合も新規品だけ登録される。
+    state.adventurers.forEach(adventurer => {
+      (adventurer.equipment || []).forEach(item => phase5RegisterEquipment(item));
+    });
 
     phase5RegisterMaterials();
     phase5RegisterDiscoveries();
@@ -436,8 +504,7 @@ function phase5PatchStats() {
         }, 0)
       : 0;
 
-    result.attack += pet.attack + achievementAttack +
-      Number(adventurer.phase5PermanentAttack || 0);
+    result.attack += pet.attack + achievementAttack;
 
     result.speed = Math.max(
       0.1,
@@ -452,28 +519,44 @@ function phase5PatchStats() {
 }
 
 function phase5PatchResourceGain() {
-  if (typeof phase3AddResource !== "function") return;
-  if (window.__phase5ResourcePatched) return;
+  if (typeof phase3AddResource === "function" && !window.__phase5ResourcePatched) {
+    const originalAddResource = phase3AddResource;
+    phase3AddResource = function(id, amount, ...args) {
+      const pet = phase5PetEffects();
+      let adjusted = Number(amount) || 0;
+      if (id === "magicStone") adjusted *= 1 + Math.max(0, Number(pet.magicStone) || 0);
 
-  const original = phase3AddResource;
-  phase3AddResource = function(id, amount, ...args) {
-    const pet = phase5PetEffects();
-    let adjusted = Number(amount) || 0;
+      const result = originalAddResource.call(this, id, adjusted, ...args);
+      phase5RegisterMaterials();
+      phase5CheckAchievements();
+      phase5UpdateCollectionBonus();
+      return result;
+    };
+    window.__phase5ResourcePatched = true;
+  }
 
-    if (id === "magicStone") {
-      adjusted *= 1 + pet.magicStone;
-    }
-
-    adjusted *= 1 + pet.gathering;
-    const result = original.call(this, id, adjusted, ...args);
-
-    phase5RegisterMaterials();
-    phase5CheckAchievements();
-    phase5UpdateCollectionBonus();
-    return result;
-  };
-
-  window.__phase5ResourcePatched = true;
+  // 採取補正は既存採取処理の実行中にだけ適用し、戦闘・イベント・クラフト報酬へ波及させない。
+  if (typeof phase3ProcessGathering === "function" && !window.__phase5GatheringPatched) {
+    const originalGathering = phase3ProcessGathering;
+    phase3ProcessGathering = function(...args) {
+      const originalAddResource = phase3AddResource;
+      const gatheringBonus = Math.max(0, Number(phase5PetEffects().gathering) || 0);
+      phase3AddResource = function(id, amount, ...resourceArgs) {
+        return originalAddResource.call(
+          this,
+          id,
+          (Number(amount) || 0) * (1 + gatheringBonus),
+          ...resourceArgs
+        );
+      };
+      try {
+        return originalGathering.apply(this, args);
+      } finally {
+        phase3AddResource = originalAddResource;
+      }
+    };
+    window.__phase5GatheringPatched = true;
+  }
 }
 
 function phase5RenderMonster() {

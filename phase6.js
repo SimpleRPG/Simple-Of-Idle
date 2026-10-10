@@ -390,8 +390,7 @@ function phase6ResetNormalProgress() {
       adventurer.equipment = index === 0
         ? (adventurer.equipment || []).slice(0, 1)
         : [];
-      adventurer.phase5PermanentAttack =
-        Number(adventurer.phase5PermanentAttack) || 0;
+
     });
   }
 
