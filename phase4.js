@@ -391,10 +391,15 @@ function phase4ProcessResearch(seconds) {
   const active = state.phase4.activeResearch;
   if (!active) return;
 
-  const researchSpeed =
-    typeof phase7ResearchSpeedMultiplier === "function"
+  const phase5Effects = typeof phase5ResearchDiscoveryEffects === "function"
+    ? phase5ResearchDiscoveryEffects()
+    : {};
+  const researchSpeed = Math.max(
+    0.1,
+    (typeof phase7ResearchSpeedMultiplier === "function"
       ? phase7ResearchSpeedMultiplier()
-      : 1;
+      : 1) + Number(phase5Effects.research || 0)
+  );
 
   // Phase 7研究も既存Phase 4研究進行へ接続する。
   // Phase 7専用の研究タイマーは作らず、同じoffline/online経路を利用する。
@@ -501,10 +506,15 @@ function phase4TryDiscoverUnknown() {
 
   // 既存の探索イベントを発見判定の入口として利用する。
   // Phase 7の発見補正は確率へ乗算し、上限を設けて極端な確率上昇を防ぐ。
-  const discoveryMultiplier =
-    typeof phase7DiscoveryMultiplier === "function"
+  const phase5Effects = typeof phase5ResearchDiscoveryEffects === "function"
+    ? phase5ResearchDiscoveryEffects()
+    : {};
+  const discoveryMultiplier = Math.max(
+    0.1,
+    (typeof phase7DiscoveryMultiplier === "function"
       ? phase7DiscoveryMultiplier()
-      : 1;
+      : 1) + Number(phase5Effects.discovery || 0)
+  );
 
   const chance = Math.min(
     0.5,

@@ -386,6 +386,30 @@ function phase5PetEffects() {
   return result;
 }
 
+function phase5ResearchDiscoveryEffects() {
+  const activeEffects = phase5PetEffects();
+  const achievementEffects = Object.entries(
+    state.phase5?.achievements || {}
+  ).reduce(
+    (total, [id, unlocked]) => {
+      if (!unlocked) return total;
+      const achievement = PHASE5_ACHIEVEMENTS.find(
+        item => item.id === id
+      );
+      const reward = achievement?.reward || {};
+      total.research += Number(reward.research) || 0;
+      total.discovery += Number(reward.discovery) || 0;
+      return total;
+    },
+    { research: 0, discovery: 0 }
+  );
+
+  return {
+    research: (Number(activeEffects.research) || 0) + achievementEffects.research,
+    discovery: (Number(activeEffects.discovery) || 0) + achievementEffects.discovery
+  };
+}
+
 function phase5UpdateCollectionBonus() {
   const monsters = Object.values(state.phase5.monsters || {}).filter(item => item.discovered).length;
   const equipment = Object.keys(state.phase5.equipment || {}).length;

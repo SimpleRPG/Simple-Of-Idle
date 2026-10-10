@@ -296,8 +296,17 @@ function phase6SpendNode(type, nodeId) {
   addLog(`✨ ${node.name} を解放した。`);
 }
 
+function phase6HighestAdventurerLevel() {
+  const adventurers = Array.isArray(state.adventurers) ? state.adventurers : [];
+  return adventurers.reduce(
+    (highest, adventurer) =>
+      Math.max(highest, Math.max(1, Number(adventurer?.level) || 1)),
+    1
+  );
+}
+
 function phase6RebirthRequirement() {
-  const level = Number(state.level) || 1;
+  const level = phase6HighestAdventurerLevel();
   const kills = Number(state.kills) || 0;
   const research = Object.keys(state.phase4?.researchLevels || {}).length;
 
@@ -356,7 +365,7 @@ function phase6RefreshUnlocks() {
 }
 
 function phase6RebirthGain() {
-  const level = Math.max(1, Number(state.level) || 1);
+  const level = phase6HighestAdventurerLevel();
   const kills = Math.max(0, Number(state.kills) || 0);
   return Math.max(
     1,
@@ -395,8 +404,6 @@ function phase6TranscendenceGain() {
 }
 
 function phase6ResetNormalProgress() {
-  state.level = 1;
-  state.xp = 0;
   state.gold = 0;
   state.kills = 0;
   state.zoneIndex = 0;
