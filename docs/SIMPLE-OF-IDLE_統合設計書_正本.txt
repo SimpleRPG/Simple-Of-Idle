@@ -1229,6 +1229,8 @@ Phase 7の星鉱石（`starOre`）・エーテル粉（`etherDust`）・星鋼�
 
 研究完了時と未知エリア発見時は、既存Phase 5 rendererを通じて図鑑・実績・称号・コレクションボーナスを再評価する。専用の重複更新経路は追加しない。
 
+Phase 5の研究系実績・称号が参照する完了研究数は、Phase 4の `state.phase4.researchLevels` とPhase 7の `state.phase7.completedResearch` を合算する。
+
 ---
 
 ## 24. 技術ツリー
@@ -2431,6 +2433,12 @@ Phase 7職業および恒久成長の発見効果は、表示上だけの値に�
 ↓
 既存Phase 4報酬
 ↓
+`phase4RefreshPhase5Progress()`
+↓
+`phase5Render()`
+↓
+`phase5RegisterAllExisting()`
+↓
 `phase5RegisterDiscoveries()`
 ↓
 既存Phase 5発見図鑑
@@ -2443,7 +2451,7 @@ Phase 7職業および恒久成長の発見効果は、表示上だけの値に�
 
 Phase 7専用の探索タイマー・発見システムは追加しない。
 
-また、未知エリアのPhase 5図鑑登録は `phase4DiscoverUnknown()` から既存 `phase5RegisterDiscoveries()` を呼び出して即時同期する。
+未知エリア発見時は `phase4DiscoverUnknown()` から `phase4RefreshPhase5Progress()` を経由して既存 `phase5Render()` を呼び出す。`phase5Render()` は `phase5RegisterAllExisting()` を通じて `phase5RegisterDiscoveries()`、実績・称号の再評価、コレクションボーナス更新を行う。
 
 これにより、
 

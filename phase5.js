@@ -85,7 +85,7 @@ const PHASE5_ACHIEVEMENTS = [
   { id: "kills-1000", name: "千体討伐", description: "累計1000体を討伐する。", target: 1000, get: () => state.kills, reward: { attack: 3 } },
   { id: "first-craft", name: "初製作", description: "初めて生産・クラフトを行う。", target: 1, get: () => phase5ProducedTotal(), reward: { production: 0.05 } },
   { id: "first-boss", name: "ボス討伐", description: "初めてボスを撃破する。", target: 1, get: () => state.phase4?.defeatedBosses?.length || 0, reward: { research: 1 } },
-  { id: "research-5", name: "研究者", description: "5件の研究を完了する。", target: 5, get: () => Object.keys(state.phase4?.researchLevels || {}).length, reward: { research: 2 } },
+  { id: "research-5", name: "研究者", description: "5件の研究を完了する。", target: 5, get: () => phase5CompletedResearchCount(), reward: { research: 2 } },
   { id: "monster-collection", name: "図鑑収集家", description: "モンスターを4種類登録する。", target: 4, get: () => Object.keys(state.phase5?.monsters || {}).filter(id => state.phase5.monsters[id]?.discovered).length, reward: { collection: 0.02 } },
   { id: "equipment-collection", name: "装備収集家", description: "装備を5種類登録する。", target: 5, get: () => Object.keys(state.phase5?.equipment || {}).length, reward: { collection: 0.02 } },
   { id: "material-collection", name: "素材収集家", description: "素材を10種類登録する。", target: 10, get: () => Object.keys(state.phase5?.materials || {}).filter(id => state.phase5.materials[id]?.discovered).length, reward: { collection: 0.02 } },
@@ -105,7 +105,7 @@ const PHASE5_TITLES = [
   { id: "new-adventurer", name: "新人冒険者", condition: () => state.kills >= 1, description: "最初の戦闘を経験した者。", effect: { attack: 1 } },
   { id: "monster-hunter", name: "モンスターハンター", condition: () => state.kills >= 100, description: "多くの魔物を討伐した者。", effect: { attack: 2 } },
   { id: "collector", name: "収集家", condition: () => Object.keys(state.phase5?.equipment || {}).length >= 5, description: "多くの装備を記録した者。", effect: { discovery: 0.03 } },
-  { id: "researcher", name: "研究者", condition: () => Object.keys(state.phase4?.researchLevels || {}).length >= 5, description: "複数の研究を完了した者。", effect: { research: 2 } },
+  { id: "researcher", name: "研究者", condition: () => phase5CompletedResearchCount() >= 5, description: "複数の研究を完了した者。", effect: { research: 2 } },
   { id: "discoverer", name: "発見者", condition: () => (state.phase5?.discoveries || []).length >= 3, description: "未知の情報を発見した者。", effect: { exploration: 0.05 } },
   { id: "beast-friend", name: "獣の友", condition: () => (state.phase5?.pets || []).length >= 2, description: "複数のペットと旅する者。", effect: { gathering: 0.05 } }
 ];
@@ -384,6 +384,18 @@ function phase5PetEffects() {
   }
 
   return result;
+}
+
+function phase5CompletedResearchCount() {
+  const phase4ResearchIds = Object.keys(state.phase4?.researchLevels || {});
+  const phase7ResearchIds = Array.isArray(state.phase7?.completedResearch)
+    ? state.phase7.completedResearch
+    : [];
+
+  return new Set([
+    ...phase4ResearchIds.map(id => `phase4:${id}`),
+    ...phase7ResearchIds.map(id => `phase7:${id}`)
+  ]).size;
 }
 
 function phase5ResearchDiscoveryEffects() {
