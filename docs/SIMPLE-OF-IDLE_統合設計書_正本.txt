@@ -1361,7 +1361,7 @@ Phase 5の研究系実績・称号が参照する完了研究数は、Phase 4の
 
 報酬は恒久成長へ接続できる。
 
-実績の攻撃力報酬は、取得済み実績から共通ステータス計算で一度だけ合算する。冒険者個別の恒久攻撃力フィールドへ同じ報酬を重ねて加算しない。
+取得済み実績の各 `reward` は、共通の実績効果集計で報酬キーごとに合算し、一度だけ既存処理へ適用する。`attack` は `adventurerStats()` の攻撃力、`exploration` は冒険者速度、`production` は既存 `phase3Craft()` の非装備レシピ出力、`research` と `discovery` は既存Phase 4の研究進行と未知エリア発見率、`collection` は `collectionBonus` に接続する。攻撃力報酬は個別冒険者の恒久攻撃力フィールドへ重ねて加算しない。
 
 ---
 
@@ -1837,7 +1837,7 @@ Phase 6の恒久効果は、表示だけに留めず既存Phase 1〜7の処理�
 
 - `attack`・`speed`・`exploration`・`idle`・`xp`・`gold`：既存 `phase6PatchStats()` と `adventurerStats()`。
 - `gathering`：既存 `phase3ProcessGathering()` の採取出力だけ。戦闘・イベント・遠征報酬やクラフト出力には適用しない。
-- `production`：既存 `phase3Craft()` の非装備レシピ出力だけに、Phase 7職業・恒久生産補正と合わせて適用する。
+- `production`：既存 `phase3Craft()` の非装備レシピ出力へ適用する。Phase 5/6/7の生産補正の集計範囲は第60章に従う。
 - `research`：既存 `phase7ResearchSpeedMultiplier()` から `phase4ProcessResearch()` へ接続し、通常研究とPhase 7研究の共通進行へ適用する。
 - `discovery`：既存 `phase7DiscoveryMultiplier()` から `phase4TryDiscoverUnknown()` の発見確率へ接続する。
 - `dungeon`：既存 `phase4ProcessActivity()` のダンジョン・ボス進行時間へ適用する。レイド・研究・資源報酬には適用しない。
@@ -2471,11 +2471,11 @@ Phase 7発見補正
 
 という既存システム間の循環を維持する。
 
-## 60. Phase 6/7生産補正の適用範囲統一
+## 60. Phase 5/6/7生産補正の適用範囲統一
 
-Phase 6の恒久ツリー効果とPhase 7職業・恒久成長の生産効果は、既存の資源獲得全体へ無差別に適用せず、既存Phase 3の非装備レシピ出力へ接続する。
+Phase 5の取得済み実績・ペット・称号の生産効果、Phase 6の恒久ツリー効果、Phase 7職業・恒久成長の生産効果は、既存の資源獲得全体へ無差別に適用せず、既存Phase 3の非装備レシピ出力へ接続する。
 
-`phase7ProductionMultiplier()`（Phase 6生産効果・Phase 7職業効果・Phase 7恒久効果を合算）
+`phase7ProductionMultiplier()`（Phase 5実績・ペット/称号効果、Phase 6生産効果、Phase 7職業効果・恒久効果を合算）
 ↓
 既存 `phase3Craft()`
 ↓
@@ -2489,7 +2489,7 @@ Phase 6の恒久ツリー効果とPhase 7職業・恒久成長の生産効果は
 
 装備製作については既存 `phase3Craft()` の装備生成処理をそのまま利用し、生産補正によって装備を複製したり、装備出力を倍率処理したりしない。
 
-Phase 6/7専用の独立した生産処理は追加せず、既存Phase 3のクラフト処理をラップして補正を接続する。
+Phase 5/6/7専用の独立した生産処理は追加せず、既存Phase 3のクラフト処理をラップして補正を接続する。
 
 これにより、採取・戦闘・探索報酬は通常の資源獲得経路を維持し、生産・クラフトの非装備レシピ出力だけに統合生産補正を適用する。
 

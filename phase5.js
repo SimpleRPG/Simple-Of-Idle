@@ -398,27 +398,27 @@ function phase5CompletedResearchCount() {
   ]).size;
 }
 
+function phase5AchievementEffects() {
+  return Object.entries(state.phase5?.achievements || {}).reduce(
+    (effects, [id, unlocked]) => {
+      if (!unlocked) return effects;
+      const achievement = PHASE5_ACHIEVEMENTS.find(item => item.id === id);
+      Object.entries(achievement?.reward || {}).forEach(([key, value]) => {
+        effects[key] = (Number(effects[key]) || 0) + (Number(value) || 0);
+      });
+      return effects;
+    },
+    {}
+  );
+}
+
 function phase5ResearchDiscoveryEffects() {
   const activeEffects = phase5PetEffects();
-  const achievementEffects = Object.entries(
-    state.phase5?.achievements || {}
-  ).reduce(
-    (total, [id, unlocked]) => {
-      if (!unlocked) return total;
-      const achievement = PHASE5_ACHIEVEMENTS.find(
-        item => item.id === id
-      );
-      const reward = achievement?.reward || {};
-      total.research += Number(reward.research) || 0;
-      total.discovery += Number(reward.discovery) || 0;
-      return total;
-    },
-    { research: 0, discovery: 0 }
-  );
+  const achievementEffects = phase5AchievementEffects();
 
   return {
-    research: (Number(activeEffects.research) || 0) + achievementEffects.research,
-    discovery: (Number(activeEffects.discovery) || 0) + achievementEffects.discovery
+    research: (Number(activeEffects.research) || 0) + (Number(achievementEffects.research) || 0),
+    discovery: (Number(activeEffects.discovery) || 0) + (Number(achievementEffects.discovery) || 0)
   };
 }
 
@@ -428,7 +428,7 @@ function phase5UpdateCollectionBonus() {
   const materials = Object.values(state.phase5.materials || {}).filter(item => item.discoveredAt).length;
   const discoveries = state.phase5.discoveries.length;
   const pets = state.phase5.pets.length;
-  const achievements = Object.values(state.phase5.achievements || {}).filter(Boolean).length;
+  const achievementsCollection = Number(phase5AchievementEffects().collection) || 0;
   const titles = state.phase5.titles.length;
 
   state.phase5.collectionBonus =
@@ -438,7 +438,7 @@ function phase5UpdateCollectionBonus() {
       (materials * 0.003) +
       (discoveries * 0.01) +
       (pets * 0.015) +
-      (achievements * 0.003) +
+      achievementsCollection +
       (titles * 0.005)
     );
 }
@@ -533,6 +533,7 @@ function phase5PatchStats() {
   adventurerStats = function(adventurer) {
     const result = original(adventurer);
     const pet = phase5PetEffects();
+    const achievementEffects = phase5AchievementEffects();
     const collectionBonus =
       (Number(state.phase5?.collectionBonus) || 0) +
       (typeof phase6Effects === "function"
@@ -541,18 +542,18 @@ function phase5PatchStats() {
       (typeof phase7Effects === "function"
         ? (Number(phase7Effects().collection) || 0)
         : 0);
-    const achievementAttack = state.phase5?.achievements
-      ? Object.entries(state.phase5.achievements).filter(([, value]) => value).reduce((sum, [id]) => {
-          const achievement = PHASE5_ACHIEVEMENTS.find(item => item.id === id);
-          return sum + Number(achievement?.reward?.attack || 0);
-        }, 0)
-      : 0;
+    const achievementAttack = Number(achievementEffects.attack) || 0;
 
     result.attack += pet.attack + achievementAttack;
 
     result.speed = Math.max(
       0.1,
-      result.speed * (1 + pet.exploration + collectionBonus * 0.2)
+      result.speed * (
+        1 +
+        (Number(pet.exploration) || 0) +
+        (Number(achievementEffects.exploration) || 0) +
+        collectionBonus * 0.2
+      )
     );
 
     result.xpMultiplier *= 1 + collectionBonus * 0.25;

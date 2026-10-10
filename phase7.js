@@ -951,10 +951,16 @@ function phase7ProductionMultiplier() {
   const jobEffects = phase7JobEffects();
   const permanent = phase7Effects();
   const phase6 = typeof phase6Effects === "function" ? phase6Effects() : {};
+  const phase5Active = typeof phase5PetEffects === "function" ? phase5PetEffects() : {};
+  const phase5Achievements = typeof phase5AchievementEffects === "function"
+    ? phase5AchievementEffects()
+    : {};
 
   return Math.max(
     0.1,
     1 +
+      Number(phase5Active.production || 0) +
+      Number(phase5Achievements.production || 0) +
       Number(phase6.production || 0) +
       Number(jobEffects.production || 0) +
       Number(permanent.production || 0)
