@@ -411,6 +411,7 @@ function phase4ProcessResearch(seconds) {
       phase7ProcessResearch(
         Math.max(0, seconds) * researchSpeed
       );
+      if (!state.phase4.activeResearch) phase4RefreshPhase5Progress();
     }
     return;
   }
@@ -431,6 +432,7 @@ function phase4ProcessResearch(seconds) {
     state.phase4.researchLevels[research.id] = 1;
     state.phase4.activeResearch = null;
     addLog(`研究完了：「${research.name}」。新しい探索技術が解禁された。`);
+    phase4RefreshPhase5Progress();
   }
 }
 
@@ -479,6 +481,10 @@ function phase4UnlockedUnknown() {
   return result;
 }
 
+function phase4RefreshPhase5Progress() {
+  if (typeof phase5Render === "function") phase5Render();
+}
+
 function phase4DiscoverUnknown(id) {
   const unknown = phase4UnlockedUnknown().find(entry => entry.id === id);
   if (!unknown) return;
@@ -488,10 +494,8 @@ function phase4DiscoverUnknown(id) {
   phase4GrantReward(unknown.reward);
   addLog(`未知エリア「${unknown.name}」を発見した。`);
 
-  // 発見した未知エリアは既存Phase 5図鑑へ即時同期する。
-  if (typeof phase5RegisterDiscoveries === "function") {
-    phase5RegisterDiscoveries();
-  }
+  // 既存Phase 5 rendererが図鑑登録・実績・称号・ボーナスをまとめて更新する。
+  phase4RefreshPhase5Progress();
 
   saveState();
   phase4Render();

@@ -494,7 +494,13 @@ function phase3RenderResources() {
     metalPart: ["金属部品", "⚙️"],
     healingPotion: ["回復薬", "🧪"],
     explorationPotion: ["探索薬", "✨"],
-    cookedMeal: ["冒険者定食", "🍲"]
+    cookedMeal: ["冒険者定食", "🍲"],
+    starOre: ["星鉱石", "⛏️"],
+    etherDust: ["エーテル粉", "✨"],
+    starIngot: ["星鋼", "🔩"],
+    etherCrystal: ["エーテル結晶", "💎"],
+    infinityFragment: ["無限断片", "🌌"],
+    infinityCore: ["無限核", "🔮"]
   };
 
   root.innerHTML = Object.entries(labels).map(([id, [name, icon]]) => `
