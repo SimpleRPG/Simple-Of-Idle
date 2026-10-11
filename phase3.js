@@ -420,14 +420,9 @@ function phase3Craft(recipeId) {
     return;
   }
 
-  if (recipe.type === "blacksmith" && !(state.base.facilities.blacksmith > 0)) {
-    addLog("鍛冶場を建設すると鍛冶を開始できます。");
-    phase3Render();
-    return;
-  }
-
-  if (recipe.type === "alchemy" && !(state.base.facilities.warehouse > 0)) {
-    addLog("錬金工房の基盤として倉庫をLv.1以上にしてください。");
+  const facilityMessage = phase3RecipeFacilityBlockMessage(recipe);
+  if (facilityMessage) {
+    addLog(facilityMessage);
     phase3Render();
     return;
   }
