@@ -180,6 +180,10 @@ const DEFAULT_STATE = {
 
 let recoveredFromBackup = false;
 var state = loadState();
+const startupOfflineSeconds = Math.max(
+  0,
+  (Date.now() - (Number(state.lastSavedAt) || Date.now())) / 1000
+);
 let lastTick = Date.now();
 let saveTimer = 0;
 
@@ -851,43 +855,51 @@ function processOffline(seconds) {
   if (!Number.isFinite(elapsedSeconds) || elapsedSeconds <= 0) return null;
 
   const capped = Math.min(elapsedSeconds, MAX_OFFLINE_SECONDS);
-  const zone = ZONES[state.zoneIndex];
-  const stats = guildStats();
-  const secondsPerBattle = battleSecondsPerKill(zone, stats);
-  const totalProgress = normalizeBattleProgress(state.battleProgress) + capped / secondsPerBattle;
-  const progressEpsilon = Number.EPSILON * Math.max(1, Math.abs(totalProgress));
-  const battles = Math.floor(totalProgress + progressEpsilon);
-  state.battleProgress = normalizeBattleProgress(totalProgress - battles);
-  const baseXp = Math.floor((zone.xp[0] + zone.xp[1]) / 2);
-  const baseGold = Math.floor((zone.gold[0] + zone.gold[1]) / 2);
-  const xp = Math.floor(battles * baseXp * stats.xpMultiplier);
-  const gold = Math.floor(battles * baseGold * stats.goldMultiplier);
-
-  state.kills += battles;
-  state.gold += gold;
-
-  let levels = 0;
-  const share = xp / Math.max(1, state.adventurers.length);
-  state.adventurers.forEach(adventurer => {
-    levels += gainXp(adventurer, share);
-  });
-
-  const found = Math.min(
-    Math.floor(battles / 18),
-    Math.max(0, 5 + baseEffects().capacity)
+  let remainingSeconds = capped;
+  let battles = 0;
+  let xp = 0;
+  let gold = 0;
+  let equipment = 0;
+  const levelsBefore = state.adventurers.reduce(
+    (sum, adventurer) => sum + Math.max(1, Number(adventurer.level) || 1),
+    0
   );
+  state.battleProgress = normalizeBattleProgress(state.battleProgress);
 
-  for (let i = 0; i < found; i++) {
-    const base = EQUIPMENT_POOL[randomInt(0, EQUIPMENT_POOL.length - 1)];
-    const target = state.adventurers[i % state.adventurers.length];
-    target.equipment.push({
-      ...base,
-      id: `offline-${Date.now()}-${i}-${Math.random()}`,
-      level: Math.max(1, target.level),
-      enhance: 0,
-      enhanceMultiplier: 1
-    });
+  while (remainingSeconds > 0) {
+    const progress = normalizeBattleProgress(state.battleProgress);
+    const secondsPerBattle = battleSecondsPerKill(ZONES[state.zoneIndex], guildStats());
+    const timeToBattle = (1 - progress) * secondsPerBattle;
+    const timeEpsilon = Number.EPSILON * Math.max(
+      1,
+      Math.abs(remainingSeconds),
+      Math.abs(timeToBattle)
+    );
+
+    if (remainingSeconds + timeEpsilon < timeToBattle) {
+      state.battleProgress = normalizeBattleProgress(
+        progress + remainingSeconds / secondsPerBattle
+      );
+      remainingSeconds = 0;
+      break;
+    }
+
+    remainingSeconds = Math.max(0, remainingSeconds - timeToBattle);
+    state.battleProgress = 0;
+
+    // オンラインと同じ1討伐の経路を通し、Phase 3〜5の既存ラッパーにも報酬を渡す。
+    processBattle();
+    battles += 1;
+    xp += Math.max(0, Number(state.recentXp) || 0);
+    gold += Math.max(0, Number(state.recentGold) || 0);
+    if (state.recentLoot && state.recentLoot !== "なし") equipment += 1;
   }
+
+  const levelsAfter = state.adventurers.reduce(
+    (sum, adventurer) => sum + Math.max(1, Number(adventurer.level) || 1),
+    0
+  );
+  const levels = Math.max(0, levelsAfter - levelsBefore);
 
   if (battles > 0) {
     addLog(`放置中に${battles.toLocaleString()}戦をギルド全体で自動処理した。`);
@@ -900,7 +912,7 @@ function processOffline(seconds) {
     xp,
     gold,
     levels,
-    equipment: found
+    equipment
   };
 }
 
@@ -1525,17 +1537,23 @@ function tick() {
   render();
 }
 
-runErrorSafeOperation("起動処理", "初期オフライン進行・初期描画", "game.js", () => {
-  const startupOffline = processOffline(
-    Math.max(0, (Date.now() - state.lastSavedAt) / 1000)
-  );
+window.addEventListener("load", () => {
+  runErrorSafeOperation("起動処理", "初期オフライン進行・初期描画", "game.js", () => {
+    lastTick = Date.now();
+    const startupOffline = processOffline(startupOfflineSeconds);
 
-  saveState();
-  render();
-  showOfflineReport(startupOffline);
-  setInterval(() => {
-    runErrorSafeOperation("ゲーム進行", "定期戦闘・自動保存・ホーム描画", "game.js", tick, {
-      pauseWhileErrorModal: true
-    });
-  }, TICK_MS);
-});
+    render();
+    phase3Render();
+    phase4Render();
+    phase5Render();
+    phase6Render();
+    phase7Render();
+    saveState();
+    showOfflineReport(startupOffline);
+    setInterval(() => {
+      runErrorSafeOperation("ゲーム進行", "定期戦闘・自動保存・ホーム描画", "game.js", tick, {
+        pauseWhileErrorModal: true
+      });
+    }, TICK_MS);
+  });
+}, { once: true });
