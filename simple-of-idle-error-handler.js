@@ -92,7 +92,11 @@
 
     document.body.appendChild(modal);
 
-    modal.querySelector("[data-error-close]").onclick = hide;
+    modal.querySelector("[data-error-close]").onclick = () => {
+      hide();
+      clearContext();
+      setRetry(null);
+    };
 
     modal.querySelector("[data-error-retry]").onclick = () => {
       const retry = retryAction;

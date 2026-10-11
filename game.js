@@ -494,36 +494,51 @@ function importSaveFile(file) {
     const reader = new FileReader();
 
     reader.onload = () => {
+      let previous = null;
       try {
         const imported = parseSave(String(reader.result || ""));
         if (!imported) throw new Error("empty save");
 
         const serialized = JSON.stringify(imported);
-        const previous = [
+        previous = [
           [SAVE_KEY, localStorage.getItem(SAVE_KEY)],
           [SAVE_BACKUP_KEY, localStorage.getItem(SAVE_BACKUP_KEY)],
           [LEGACY_SAVE_KEY, localStorage.getItem(LEGACY_SAVE_KEY)]
         ];
 
-        try {
-          localStorage.setItem(SAVE_BACKUP_KEY, serialized);
-          localStorage.setItem(SAVE_KEY, serialized);
-          localStorage.removeItem(LEGACY_SAVE_KEY);
-        } catch (error) {
-          // インポート保存が途中で失敗した場合、元の保存領域へ戻す。
-          previous.forEach(([key, value]) => {
-            try {
-              if (value === null) localStorage.removeItem(key);
-              else localStorage.setItem(key, value);
-            } catch {}
-          });
-          throw error;
-        }
+        // Storageへの書込みから成功通知・再読み込み開始までを一つの処理として扱う。
+        localStorage.setItem(SAVE_BACKUP_KEY, serialized);
+        localStorage.setItem(SAVE_KEY, serialized);
+        localStorage.removeItem(LEGACY_SAVE_KEY);
 
         alert("セーブデータを読み込みました。ゲームを再読み込みします。");
         location.reload();
         resolve();
       } catch (error) {
+        const rollbackFailures = [];
+        if (previous) {
+          previous.forEach(([key, value]) => {
+            try {
+              if (value === null) localStorage.removeItem(key);
+              else localStorage.setItem(key, value);
+            } catch (rollbackError) {
+              const message = rollbackError instanceof Error
+                ? rollbackError.message
+                : String(rollbackError);
+              rollbackFailures.push(`${key}: ${message}`);
+            }
+          });
+        }
+
+        if (rollbackFailures.length > 0) {
+          const originalMessage = error instanceof Error ? error.message : String(error);
+          const rollbackError = new Error(
+            `セーブ読み込みに失敗しました: ${originalMessage}。元の保存領域の復元にも失敗しました: ${rollbackFailures.join(" / ")}`
+          );
+          rollbackError.cause = error;
+          reject(rollbackError);
+          return;
+        }
         reject(error);
       }
     };
