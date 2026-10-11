@@ -340,6 +340,9 @@ function phase3PatchEnhancement() {
 function phase3CanStoreCraftOutput(recipe) {
   if (!recipe?.output || recipe.output.equipment) return true;
 
+  // 素材が足りない場合は容量の可否を判定せず、UIでは素材不足を優先する。
+  if (!phase3CanAfford(recipe.inputs || {})) return true;
+
   const rawMultiplier = typeof phase7ProductionMultiplier === "function"
     ? Number(phase7ProductionMultiplier())
     : 1;
@@ -348,6 +351,12 @@ function phase3CanStoreCraftOutput(recipe) {
     : 1;
   const resources = { ...(state.phase3.resources || {}) };
   const capacity = phase3WarehouseCapacity();
+
+  // 実際のphase3Craft()と同じく、完成品を追加する前に素材消費後の在庫を再現する。
+  Object.entries(recipe.inputs || {}).forEach(([id, amount]) => {
+    const consumed = Math.max(0, Number(amount) || 0);
+    resources[id] = Math.max(0, (Number(resources[id]) || 0) - consumed);
+  });
 
   for (const [id, baseAmount] of Object.entries(recipe.output)) {
     const numericBaseAmount = Number(baseAmount);
