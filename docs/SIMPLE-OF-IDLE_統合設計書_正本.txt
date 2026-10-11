@@ -1050,6 +1050,17 @@ Simple-Of-Idleは、ユーザーのためにChatGPTが設計・実装・検証�
 
 エリアごとに敵・素材・装備・ボス・イベント・解禁条件を持つ。通常戦闘エリアは `PHASE4_MAPS` と `ZONES` を0始まりの `zoneIndex` で一対一に対応させ、村周辺・草原・深緑の森・鉱脈洞窟・古代遺跡・魔王領の6エリアを使用する。既存の深緑の森は戦闘データ名「森」を維持し、マップ表示名との差はモンスターID対応で吸収する。洞窟・古代遺跡・魔王領にも敵HP・経験値・ゴールド・戦闘間隔を定義し、選択した地域の通常敵を戦闘・報酬・図鑑へ接続する。マップ選択時は `state.zoneIndex` と `state.phase4.selectedMap` を同期し、前エリアの `state.battleProgress` を0へ戻す。有効な保存済みマップIDがある場合はそのエリアへ `zoneIndex` を同期する。旧セーブに有効なマップIDがない場合は保存済み `zoneIndex` からマップを復元する。プレステージの通常進行リセットでは `village`・`zoneIndex = 0`・`battleProgress = 0` へ同時に戻す。
 
+通常戦闘は各 `ZONES` の `materialDrops` を地域素材の正本とし、各エントリを1討伐ごとに独立して確率判定する。抽選に当たった素材は既存 `phase3AddResource()` へ渡し、倉庫容量に収まり実際に追加された場合だけ冒険ログへ記録する。通常の素材図鑑は既存Phase 5の資源登録処理を利用する。地域ごとの現在の抽選は次の通り。
+
+| エリア | 地域素材 | 1討伐あたりの確率 | 抽選量 |
+| --- | --- | ---: | ---: |
+| 村周辺 | 薬草 `herb` | 2.5% | 1 |
+| 草原 | 布 `cloth` | 3% | 1 |
+| 深緑の森 | 肉 `meat` | 4% | 1〜2 |
+| 鉱脈洞窟 | 精製石材 `refinedStone` / 鉄 `iron` | 3.5% / 2.5% | 各1 |
+| 古代遺跡 | 魔石 `magicStone` / 金属部品 `metalPart` | 3.5% / 2% | 各1 |
+| 魔王領 | 魔石 `magicStone` / 金属部品 `metalPart` | 5% / 3% | 各1〜2 |
+
 ---
 
 ## 13. ダンジョン
@@ -1106,7 +1117,7 @@ Simple-Of-Idleは、ユーザーのためにChatGPTが設計・実装・検証�
 
 各資源は他システムの入力として使う。
 
-ペット・称号・Phase 6恒久ツリーの採取補正は、既存 `phase3ProcessGathering()` の出力に限って適用する。戦闘報酬・ダンジョン報酬・イベント報酬・クラフト出力など、共通 `phase3AddResource()` を通る全報酬へ無差別に適用しない。魔石獲得補正は、魔石を獲得する場合だけ適用する。
+ペット・称号・Phase 6恒久ツリーの採取補正は、既存 `phase3ProcessGathering()` の出力に限って適用する。戦闘報酬・ダンジョン報酬・イベント報酬・クラフト出力など、共通 `phase3AddResource()` を通る全報酬へ無差別に適用しない。魔石獲得補正は、魔石を獲得する場合だけ適用する。地域固有の通常戦闘素材は第12章の `ZONES.materialDrops` から抽選し、既存 `phase3AddResource()` を経由して倉庫容量・素材図鑑へ接続する。採取補正を戦闘ドロップへ適用しない。
 
 ---
 
@@ -1291,7 +1302,7 @@ Phase 5の研究系実績・称号が参照する完了研究数は、Phase 4の
 - 初回撃破
 - レア情報
 
-通常エリアの敵IDは、スライム（`slime`）、ゴブリン（`goblin`）、ウルフ（`wolf`）、洞窟ゴブリン（`cave-goblin`）、遺跡守衛（`ruins-guard`）、魔族兵（`demon-soldier`）とする。洞窟の守護者（`cave-guardian`）、古代遺跡の守護者（`ruins-guardian`）、魔王領の支配者（`demon-lord`）はボス用IDを維持し、通常エリアの撃破をボスの撃破数へ加算しない。`ZONES[state.zoneIndex].name` から通常敵IDを一意に選び、すべての通常討伐はそのIDへ記録する。Phase 4の `state.phase4.defeatedBosses` とPhase 7のボス撃破記録は既存のモンスター図鑑へ連携し、既に保存済みの撃破記録もロード時に一度だけ図鑑へ反映する。旧ID `ancient-guardian` は、実際の `ruins-guardian` 撃破記録がある場合だけ新IDへ移行し、旧IDに残っていた通常戦闘の誤集計をボス撃破数として引き継がない。
+通常エリアの敵IDは、スライム（`slime`）、ゴブリン（`goblin`）、ウルフ（`wolf`）、洞窟ゴブリン（`cave-goblin`）、遺跡守衛（`ruins-guard`）、魔族兵（`demon-soldier`）とする。洞窟の守護者（`cave-guardian`）、古代遺跡の守護者（`ruins-guardian`）、魔王領の支配者（`demon-lord`）はボス用IDを維持し、通常エリアの撃破をボスの撃破数へ加算しない。`ZONES[state.zoneIndex].name` から通常敵IDを一意に選び、すべての通常討伐はそのIDへ記録する。Phase 4の `state.phase4.defeatedBosses` とPhase 7の `state.phase7.defeatedBosses` は、既存のモンスター図鑑へ接続する。Phase 7の職業・モンスター定義を既存レジストリへ登録した後、起動時に保存済み撃破IDを既存ボス定義と照合し、記録が欠けているボスだけを最低1体の撃破済み状態へ復元する。この復元は通常の `phase5EnsureState()` やボス撃破処理のたびに実行せず、Phase 7初期統合時に行って新規ボス討伐の二重加算を防ぐ。旧ID `ancient-guardian` は、実際の `ruins-guardian` 撃破記録がある場合だけ新IDへ1体として移行し、旧IDに残っていた通常戦闘の誤集計をボス撃破数として引き継がない。
 
 ---
 

@@ -5,12 +5,12 @@ const MAX_OFFLINE_SECONDS = 12 * 60 * 60;
 const TICK_MS = 1000;
 
 const ZONES = [
-  { name: "村周辺", enemy: "スライム", hp: 30, gold: [5, 9], xp: [18, 25], interval: 5 },
-  { name: "草原", enemy: "ゴブリン", hp: 55, gold: [10, 18], xp: [30, 42], interval: 7 },
-  { name: "森", enemy: "ウルフ", hp: 95, gold: [18, 30], xp: [48, 65], interval: 9 },
-  { name: "鉱脈洞窟", enemy: "洞窟ゴブリン", hp: 145, gold: [28, 42], xp: [70, 95], interval: 9 },
-  { name: "古代遺跡", enemy: "遺跡守衛", hp: 260, gold: [58, 85], xp: [125, 165], interval: 11 },
-  { name: "魔王領", enemy: "魔族兵", hp: 440, gold: [105, 150], xp: [220, 285], interval: 13 }
+  { name: "村周辺", enemy: "スライム", hp: 30, gold: [5, 9], xp: [18, 25], interval: 5, materialDrops: [{ resource: "herb", name: "薬草", chance: 0.025, min: 1, max: 1 }] },
+  { name: "草原", enemy: "ゴブリン", hp: 55, gold: [10, 18], xp: [30, 42], interval: 7, materialDrops: [{ resource: "cloth", name: "布", chance: 0.03, min: 1, max: 1 }] },
+  { name: "森", enemy: "ウルフ", hp: 95, gold: [18, 30], xp: [48, 65], interval: 9, materialDrops: [{ resource: "meat", name: "肉", chance: 0.04, min: 1, max: 2 }] },
+  { name: "鉱脈洞窟", enemy: "洞窟ゴブリン", hp: 145, gold: [28, 42], xp: [70, 95], interval: 9, materialDrops: [{ resource: "refinedStone", name: "精製石材", chance: 0.035, min: 1, max: 1 }, { resource: "iron", name: "鉄", chance: 0.025, min: 1, max: 1 }] },
+  { name: "古代遺跡", enemy: "遺跡守衛", hp: 260, gold: [58, 85], xp: [125, 165], interval: 11, materialDrops: [{ resource: "magicStone", name: "魔石", chance: 0.035, min: 1, max: 1 }, { resource: "metalPart", name: "金属部品", chance: 0.02, min: 1, max: 1 }] },
+  { name: "魔王領", enemy: "魔族兵", hp: 440, gold: [105, 150], xp: [220, 285], interval: 13, materialDrops: [{ resource: "magicStone", name: "魔石", chance: 0.05, min: 1, max: 2 }, { resource: "metalPart", name: "金属部品", chance: 0.03, min: 1, max: 2 }] }
 ];
 
 const JOBS = {
@@ -828,6 +828,31 @@ function battleSecondsPerKill(zone = ZONES[state.zoneIndex], stats = guildStats(
   return Math.max(1, interval / battleSpeed * hp / attack);
 }
 
+function rollZoneMaterialDrops(zone) {
+  if (!Array.isArray(zone?.materialDrops) || typeof phase3AddResource !== "function") {
+    return [];
+  }
+
+  const received = [];
+  zone.materialDrops.forEach(drop => {
+    const chance = Number(drop?.chance);
+    if (!Number.isFinite(chance) || chance <= 0 || chance > 1 || Math.random() >= chance) {
+      return;
+    }
+
+    const minimum = Math.max(1, Math.floor(Number(drop.min) || 1));
+    const maximum = Math.max(minimum, Math.floor(Number(drop.max) || minimum));
+    const requested = randomInt(minimum, maximum);
+    const accepted = phase3AddResource(drop.resource, requested);
+    if (!(accepted > 0)) return;
+
+    received.push({ resource: drop.resource, amount: accepted });
+    addLog(`地域素材「${drop.name || drop.resource}」を${Number(accepted.toFixed(2))}個発見した。`);
+  });
+
+  return received;
+}
+
 function processBattle() {
   const zone = ZONES[state.zoneIndex];
   const stats = guildStats();
@@ -850,6 +875,7 @@ function processBattle() {
 
   const loot = maybeDropEquipment();
   state.recentLoot = loot ? loot.name : "なし";
+  rollZoneMaterialDrops(zone);
 
   if (crit) addLog("クリティカル発生。報酬が増加した。");
   if (state.kills % 10 === 0) {

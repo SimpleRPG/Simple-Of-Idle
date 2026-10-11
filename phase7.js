@@ -374,6 +374,11 @@ function phase7IntegrateExistingSystems() {
     });
   }
 
+  // 既存のPhase 4/7撃破記録を、ボス戦の実行経路とは分離して起動時に一度だけ復元する。
+  if (typeof phase5RestoreDefeatedBossRecords === "function") {
+    phase5RestoreDefeatedBossRecords();
+  }
+
   // 既存図鑑の素材同期を即時反映する。
   if (typeof phase5RegisterMaterials === "function") {
     phase5RegisterMaterials();

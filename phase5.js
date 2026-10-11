@@ -152,33 +152,64 @@ function phase5EnsureState() {
   };
   state.phase5.version = PHASE5_VERSION;
 
-  // 古いIDには実際のボス撃破ではなく通常敵の記録が混在し得るため、保存済みボス撃破記録を基準に移行する。
+  // 旧IDに記録された通常遺跡敵の討伐を、ボスとは分離した通常敵IDへ移行する。
   const legacyRuinsGuardian = state.phase5.monsters["ancient-guardian"];
-  const defeatedBosses = Array.isArray(state.phase4?.defeatedBosses)
-    ? state.phase4.defeatedBosses
-    : [];
-  if (legacyRuinsGuardian && !state.phase5.monsters["ruins-guardian"] && defeatedBosses.includes("ruins-guardian")) {
-    state.phase5.monsters["ruins-guardian"] = {
-      discovered: true,
-      kills: 1,
-      firstSeenAt: legacyRuinsGuardian.firstSeenAt || Date.now(),
-      firstDefeatedAt: Date.now()
+  if (legacyRuinsGuardian) {
+    const currentNormal = state.phase5.monsters["ruins-guard"] || {};
+    const legacyKills = Math.max(0, Number(legacyRuinsGuardian.kills) || 0);
+    const currentKills = Math.max(0, Number(currentNormal.kills) || 0);
+    state.phase5.monsters["ruins-guard"] = {
+      ...legacyRuinsGuardian,
+      ...currentNormal,
+      discovered: Boolean(legacyRuinsGuardian.discovered || currentNormal.discovered),
+      kills: legacyKills + currentKills,
+      firstSeenAt: legacyRuinsGuardian.firstSeenAt || currentNormal.firstSeenAt || Date.now(),
+      firstDefeatedAt: legacyRuinsGuardian.firstDefeatedAt || currentNormal.firstDefeatedAt ||
+        (legacyKills + currentKills > 0 ? Date.now() : null)
     };
   }
   delete state.phase5.monsters["ancient-guardian"];
+}
 
-  ["cave-guardian", "ruins-guardian", "demon-lord"].forEach(id => {
-    if (!defeatedBosses.includes(id)) return;
+function phase5RestoreDefeatedBossRecords() {
+  phase5EnsureState();
+
+  const defeatedPhase4 = new Set(
+    (Array.isArray(state.phase4?.defeatedBosses) ? state.phase4.defeatedBosses : [])
+      .filter(id => typeof id === "string" && !id.startsWith("phase7:"))
+  );
+  const defeatedPhase7 = new Set(
+    Array.isArray(state.phase7?.defeatedBosses) ? state.phase7.defeatedBosses : []
+  );
+  const phase4BossIds = new Set(
+    typeof PHASE4_BOSSES !== "undefined" ? PHASE4_BOSSES.map(boss => boss.id) : []
+  );
+  const phase7BossIds = new Set(
+    typeof PHASE7_BOSSES !== "undefined" ? PHASE7_BOSSES.map(boss => boss.id) : []
+  );
+
+  const restore = id => {
+    if (!PHASE5_MONSTERS.some(monster => monster.id === id)) return;
     const current = state.phase5.monsters[id] || {};
-    if (current.firstDefeatedAt) return;
+    if (current.firstDefeatedAt && Number(current.kills) > 0) return;
+
     state.phase5.monsters[id] = {
       ...current,
       discovered: true,
       kills: Math.max(1, Number(current.kills) || 0),
       firstSeenAt: current.firstSeenAt || Date.now(),
-      firstDefeatedAt: Date.now()
+      firstDefeatedAt: current.firstDefeatedAt || Date.now()
     };
+  };
+
+  defeatedPhase4.forEach(id => {
+    if (phase4BossIds.has(id)) restore(id);
   });
+  defeatedPhase7.forEach(id => {
+    if (phase7BossIds.has(id)) restore(id);
+  });
+
+  phase5UpdateCollectionBonus();
 }
 
 function phase5RegisterMonster(id, extra = {}) {
