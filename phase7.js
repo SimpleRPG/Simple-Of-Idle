@@ -1299,7 +1299,13 @@ function phase7RenderProduction() {
     const canAfford = !phase3Recipe ||
       typeof phase3CanAfford !== "function" ||
       phase3CanAfford(phase3Recipe.inputs);
-    const canStore = !phase3Recipe || !canAfford ||
+    // 素材不足時は、共通phase3Craft()と同じ優先順位で素材不足だけを表示する。
+    const facilityMessage = canAfford && phase3Recipe &&
+      typeof phase3RecipeFacilityBlockMessage === "function"
+      ? phase3RecipeFacilityBlockMessage(phase3Recipe)
+      : "";
+    const canUseFacility = !facilityMessage;
+    const canStore = !phase3Recipe || !canAfford || !canUseFacility ||
       typeof phase3CanStoreCraftOutput !== "function" ||
       phase3CanStoreCraftOutput(phase3Recipe);
     const inputs = Object.entries(recipe.inputs)
@@ -1312,12 +1318,13 @@ function phase7RenderProduction() {
         <small>${unlocked ? recipe.description : `世界「${recipe.world}」到達で解禁`}</small>
         ${unlocked ? `<span class="phase7-chip">素材: ${inputs}</span>` : ""}
         ${unlocked && !canAfford ? "<small>必要な素材が不足しています。</small>" : ""}
-        ${unlocked && canAfford && !canStore ? "<small>倉庫の空き容量が不足しています。</small>" : ""}
+        ${unlocked && facilityMessage ? `<small>${facilityMessage}</small>` : ""}
+        ${unlocked && canAfford && !facilityMessage && !canStore ? "<small>倉庫の空き容量が不足しています。</small>" : ""}
         ${unlocked ? `
           <button class="small-button"
             data-phase7-action="craft"
             data-id="${recipe.id}"
-            ${canAfford && canStore ? "" : "disabled"}>生産</button>` : ""}
+            ${canAfford && canUseFacility && canStore ? "" : "disabled"}>生産</button>` : ""}
       </div>
     `;
   }).join("");

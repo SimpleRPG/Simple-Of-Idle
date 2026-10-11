@@ -216,6 +216,24 @@ function phase3CanAfford(inputs) {
   );
 }
 
+function phase3RecipeFacilityBlockMessage(recipe) {
+  if (
+    recipe?.type === "blacksmith" &&
+    !(state.base?.facilities?.blacksmith > 0)
+  ) {
+    return "鍛冶場が未建設です。拠点で鍛冶場を建設してください。";
+  }
+
+  if (
+    recipe?.type === "alchemy" &&
+    !(state.base?.facilities?.warehouse > 0)
+  ) {
+    return "錬金には倉庫Lv.1以上が必要です。";
+  }
+
+  return "";
+}
+
 function phase3Consume(inputs) {
   if (!phase3CanAfford(inputs)) return false;
 
@@ -595,10 +613,15 @@ function phase3RecipeHTML(recipe) {
   ).join(" / ");
 
   const available = phase3CanAfford(recipe.inputs);
+  // 実際のphase3Craft()と同じく、素材不足を施設不足より先に表示する。
+  const facilityMessage = available
+    ? phase3RecipeFacilityBlockMessage(recipe)
+    : "";
+  const facilityBlocked = Boolean(facilityMessage);
   const canStore = phase3CanStoreCraftOutput(recipe);
   const materialBlocked = !available;
   const storageBlocked =
-    available && !recipe.output?.equipment && !canStore;
+    available && !facilityBlocked && !recipe.output?.equipment && !canStore;
 
   return `
     <div class="recipe">
@@ -607,12 +630,13 @@ function phase3RecipeHTML(recipe) {
         <small>${recipe.description}</small>
         <small>必要: ${inputText}</small>
         ${materialBlocked ? "<small>必要な素材が不足しています。</small>" : ""}
+        ${facilityBlocked ? `<small>${facilityMessage}</small>` : ""}
         ${storageBlocked ? "<small>倉庫の空き容量が不足しています。</small>" : ""}
       </div>
       <button class="small-button"
         data-phase3-action="craft"
         data-recipe="${recipe.id}"
-        ${available && canStore ? "" : "disabled"}>製作</button>
+        ${available && !facilityBlocked && canStore ? "" : "disabled"}>製作</button>
     </div>
   `;
 }
