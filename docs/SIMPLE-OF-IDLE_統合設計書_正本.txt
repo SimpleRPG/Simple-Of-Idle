@@ -1363,6 +1363,8 @@ Phase 5の研究系実績・称号が参照する完了研究数は、Phase 4の
 
 取得済み実績の各 `reward` は、共通の実績効果集計で報酬キーごとに合算し、一度だけ既存処理へ適用する。`attack` は `adventurerStats()` の攻撃力、`exploration` は冒険者速度、`production` は既存 `phase3Craft()` の非装備レシピ出力、`research` と `discovery` は既存Phase 4の研究進行と未知エリア発見率、`collection` は `collectionBonus` に接続する。従来の基礎加算である取得済み実績数×0.003を維持し、取得済み実績の `reward.collection` 合計を別途加算した後、上限0.25を適用する。攻撃力報酬は個別冒険者の恒久攻撃力フィールドへ重ねて加算しない。
 
+実績「初製作」は、既存 `phase3Craft()` の成功完了回数 `state.phase3.craftsCompleted` を参照し、装備・非装備およびPhase 7レシピを1回ずつ数える。
+
 ---
 
 ## 32. 称号

@@ -83,7 +83,7 @@ const PHASE5_ACHIEVEMENTS = [
   { id: "first-battle", name: "初戦闘", description: "初めて敵を1体討伐する。", target: 1, get: () => state.kills, reward: { collection: 0.01 } },
   { id: "kills-100", name: "百戦錬磨", description: "累計100体を討伐する。", target: 100, get: () => state.kills, reward: { attack: 1 } },
   { id: "kills-1000", name: "千体討伐", description: "累計1000体を討伐する。", target: 1000, get: () => state.kills, reward: { attack: 3 } },
-  { id: "first-craft", name: "初製作", description: "初めて生産・クラフトを行う。", target: 1, get: () => phase5ProducedTotal(), reward: { production: 0.05 } },
+  { id: "first-craft", name: "初製作", description: "初めて生産・クラフトを行う。", target: 1, get: () => Number(state.phase3?.craftsCompleted) || 0, reward: { production: 0.05 } },
   { id: "first-boss", name: "ボス討伐", description: "初めてボスを撃破する。", target: 1, get: () => state.phase4?.defeatedBosses?.length || 0, reward: { research: 1 } },
   { id: "research-5", name: "研究者", description: "5件の研究を完了する。", target: 5, get: () => phase5CompletedResearchCount(), reward: { research: 2 } },
   { id: "monster-collection", name: "図鑑収集家", description: "モンスターを4種類登録する。", target: 4, get: () => Object.keys(state.phase5?.monsters || {}).filter(id => state.phase5.monsters[id]?.discovered).length, reward: { collection: 0.02 } },
@@ -148,15 +148,6 @@ function phase5EnsureState() {
       Boolean(previous.equipmentCountMigrationPending) || needsEquipmentMigration
   };
   state.phase5.version = PHASE5_VERSION;
-}
-
-function phase5ProducedTotal() {
-  return Number(state.phase3?.produced?.timber || 0) +
-    Number(state.phase3?.produced?.iron || 0) +
-    Number(state.phase3?.produced?.metalPart || 0) +
-    Number(state.phase3?.produced?.healingPotion || 0) +
-    Number(state.phase3?.produced?.explorationPotion || 0) +
-    Number(state.phase3?.produced?.cookedMeal || 0);
 }
 
 function phase5RegisterMonster(id, extra = {}) {

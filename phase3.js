@@ -21,6 +21,7 @@ const PHASE3_DEFAULT = {
     explorationPotion: 0,
     cookedMeal: 0
   },
+  craftsCompleted: 0,
   produced: {
     timber: 0,
     iron: 0,
@@ -157,6 +158,17 @@ function phase3Init() {
     ...clone(PHASE3_DEFAULT.produced),
     ...(state.phase3.produced || {})
   };
+
+  if (!Object.prototype.hasOwnProperty.call(state.phase3, "craftsCompleted")) {
+    const previousProducedTotal = Object.values(state.phase3.produced)
+      .reduce((sum, amount) => sum + Math.max(0, Number(amount) || 0), 0);
+    state.phase3.craftsCompleted = previousProducedTotal > 0 ? 1 : 0;
+  } else {
+    state.phase3.craftsCompleted = Math.max(
+      0,
+      Math.floor(Number(state.phase3.craftsCompleted) || 0)
+    );
+  }
 
   state.phase3.assignments = {
     ...(state.phase3.assignments || {})
@@ -406,6 +418,12 @@ function phase3Craft(recipeId) {
     });
 
     addLog(`${recipe.name} を生産した。`);
+  }
+
+  state.phase3.craftsCompleted =
+    (Number(state.phase3.craftsCompleted) || 0) + 1;
+  if (typeof phase5CheckAchievements === "function") {
+    phase5CheckAchievements();
   }
 
   saveState();
