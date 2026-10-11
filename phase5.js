@@ -776,7 +776,7 @@ document.addEventListener("click", event => {
 
   const action = button.dataset.phase5Action;
   const id = button.dataset.id;
-  const execute = createErrorSafeRetry(() => {
+  runErrorSafeOperation("Phase 5", action || "不明", "phase5.js", () => {
     if (action === "pet-get") {
       phase5CollectPet(id);
     }
@@ -794,27 +794,6 @@ document.addEventListener("click", event => {
     render();
     phase5Render();
   });
-
-  window.SimpleIdleErrorHandler?.setRetry(null);
-  window.SimpleIdleErrorHandler?.setContext({
-    phase: "Phase 5",
-    operation: action,
-    file: "phase5.js"
-  });
-  window.SimpleIdleErrorHandler?.setRetry(execute);
-
-  try {
-    execute();
-    window.SimpleIdleErrorHandler?.clearContext();
-    window.SimpleIdleErrorHandler?.setRetry(null);
-  } catch (error) {
-    window.SimpleIdleErrorHandler?.report(error, {
-      phase: "Phase 5",
-      operation: action,
-      file: "phase5.js"
-    });
-    throw error;
-  }
 });
 
 document.querySelectorAll(".tab").forEach(button => {

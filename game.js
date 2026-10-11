@@ -225,7 +225,8 @@ function runErrorSafeOperation(phase, operation, file, callback, options = {}) {
   const execute = createErrorSafeRetry(callback);
   const failed = error => {
     handler?.report(error, { phase, operation, file });
-    throw error;
+    // 例外は共通モーダルへ集約済みなので再送出せず、window.errorによる二重報告を避ける。
+    return undefined;
   };
   const succeeded = result => {
     handler?.clearContext();
@@ -1290,7 +1291,16 @@ document.addEventListener("click", event => {
   if (!button) return;
 
   const action = button.dataset.action;
-  const execute = createErrorSafeRetry(() => {
+  const operationNames = {
+    "select-adventurer": "冒険者選択",
+    job: "転職",
+    skill: "スキル習得",
+    tree: "スキルツリー習得",
+    facility: "施設強化",
+    enhance: "装備強化"
+  };
+
+  runErrorSafeOperation("ゲーム操作", operationNames[action] || action || "不明", "game.js", () => {
     if (action === "select-adventurer") {
       selectAdventurer(Number(button.dataset.adventurer));
     } else if (action === "job") {
@@ -1305,96 +1315,18 @@ document.addEventListener("click", event => {
       enhanceEquipment(Number(button.dataset.adventurer), button.dataset.item);
     }
   });
-
-  window.SimpleIdleErrorHandler?.setRetry(null);
-  window.SimpleIdleErrorHandler?.setContext({
-    phase: "ゲーム操作",
-    operation: action,
-    file: "game.js"
-  });
-  window.SimpleIdleErrorHandler?.setRetry(execute);
-
-  try {
-    execute();
-    window.SimpleIdleErrorHandler?.clearContext();
-    window.SimpleIdleErrorHandler?.setRetry(null);
-  } catch (error) {
-    window.SimpleIdleErrorHandler?.report(error, {
-      phase: "ゲーム操作",
-      operation: action,
-      file: "game.js"
-    });
-    throw error;
-  }
 });
 
 document.getElementById("hireAdventurer").addEventListener("click", () => {
-  const execute = createErrorSafeRetry(() => hireAdventurer());
-  window.SimpleIdleErrorHandler?.setRetry(null);
-  window.SimpleIdleErrorHandler?.setContext({
-    phase: "冒険者管理",
-    operation: "冒険者を雇用",
-    file: "game.js"
-  });
-  window.SimpleIdleErrorHandler?.setRetry(execute);
-  try {
-    execute();
-    window.SimpleIdleErrorHandler?.clearContext();
-    window.SimpleIdleErrorHandler?.setRetry(null);
-  } catch (error) {
-    window.SimpleIdleErrorHandler?.report(error, {
-      phase: "冒険者管理",
-      operation: "冒険者を雇用",
-      file: "game.js"
-    });
-    throw error;
-  }
+  runErrorSafeOperation("冒険者管理", "冒険者を雇用", "game.js", () => hireAdventurer());
 });
 
 document.getElementById("manualSave").addEventListener("click", () => {
-  const execute = createErrorSafeRetry(() => saveState());
-  window.SimpleIdleErrorHandler?.setRetry(null);
-  window.SimpleIdleErrorHandler?.setContext({
-    phase: "セーブ処理",
-    operation: "手動保存",
-    file: "game.js"
-  });
-  window.SimpleIdleErrorHandler?.setRetry(execute);
-  try {
-    execute();
-    window.SimpleIdleErrorHandler?.clearContext();
-    window.SimpleIdleErrorHandler?.setRetry(null);
-  } catch (error) {
-    window.SimpleIdleErrorHandler?.report(error, {
-      phase: "セーブ処理",
-      operation: "手動保存",
-      file: "game.js"
-    });
-    throw error;
-  }
+  runErrorSafeOperation("セーブ処理", "手動保存", "game.js", saveState);
 });
 
 document.getElementById("exportSave").addEventListener("click", () => {
-  const execute = createErrorSafeRetry(() => exportSave());
-  window.SimpleIdleErrorHandler?.setRetry(null);
-  window.SimpleIdleErrorHandler?.setContext({
-    phase: "セーブ処理",
-    operation: "セーブデータの書き出し",
-    file: "game.js"
-  });
-  window.SimpleIdleErrorHandler?.setRetry(execute);
-  try {
-    execute();
-    window.SimpleIdleErrorHandler?.clearContext();
-    window.SimpleIdleErrorHandler?.setRetry(null);
-  } catch (error) {
-    window.SimpleIdleErrorHandler?.report(error, {
-      phase: "セーブ処理",
-      operation: "セーブデータの書き出し",
-      file: "game.js"
-    });
-    throw error;
-  }
+  runErrorSafeOperation("セーブ処理", "セーブデータの書き出し", "game.js", exportSave);
 });
 
 document.getElementById("importSaveButton").addEventListener("click", () => {
@@ -1420,49 +1352,11 @@ document.getElementById("importSave").addEventListener("change", event => {
 });
 
 document.getElementById("resetSave").addEventListener("click", () => {
-  const execute = createErrorSafeRetry(() => resetSave());
-  window.SimpleIdleErrorHandler?.setRetry(null);
-  window.SimpleIdleErrorHandler?.setContext({
-    phase: "セーブ処理",
-    operation: "セーブデータのリセット",
-    file: "game.js"
-  });
-  window.SimpleIdleErrorHandler?.setRetry(execute);
-  try {
-    execute();
-    window.SimpleIdleErrorHandler?.clearContext();
-    window.SimpleIdleErrorHandler?.setRetry(null);
-  } catch (error) {
-    window.SimpleIdleErrorHandler?.report(error, {
-      phase: "セーブ処理",
-      operation: "セーブデータのリセット",
-      file: "game.js"
-    });
-    throw error;
-  }
+  runErrorSafeOperation("セーブ処理", "セーブデータのリセット", "game.js", resetSave);
 });
 
 document.getElementById("deleteLegacySave").addEventListener("click", () => {
-  const execute = createErrorSafeRetry(() => deleteLegacySave());
-  window.SimpleIdleErrorHandler?.setRetry(null);
-  window.SimpleIdleErrorHandler?.setContext({
-    phase: "セーブ処理",
-    operation: "旧v1セーブの削除",
-    file: "game.js"
-  });
-  window.SimpleIdleErrorHandler?.setRetry(execute);
-  try {
-    execute();
-    window.SimpleIdleErrorHandler?.clearContext();
-    window.SimpleIdleErrorHandler?.setRetry(null);
-  } catch (error) {
-    window.SimpleIdleErrorHandler?.report(error, {
-      phase: "セーブ処理",
-      operation: "旧v1セーブの削除",
-      file: "game.js"
-    });
-    throw error;
-  }
+  runErrorSafeOperation("セーブ処理", "旧v1セーブの削除", "game.js", deleteLegacySave);
 });
 
 document.getElementById("closeOffline").addEventListener("click", () => {

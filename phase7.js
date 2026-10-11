@@ -1550,7 +1550,7 @@ document.addEventListener("click", event => {
 
   const action = button.dataset.phase7Action;
   const id = button.dataset.id;
-  const execute = createErrorSafeRetry(() => {
+  runErrorSafeOperation("Phase 7", action || "不明", "phase7.js", () => {
     if (action === "world") {
       if (state.phase7.discoveredWorlds.includes(id)) {
         state.phase7.selectedWorld = id;
@@ -1571,27 +1571,6 @@ document.addEventListener("click", event => {
     render();
     phase7Render();
   });
-
-  window.SimpleIdleErrorHandler?.setRetry(null);
-  window.SimpleIdleErrorHandler?.setContext({
-    phase: "Phase 7",
-    operation: action,
-    file: "phase7.js"
-  });
-  window.SimpleIdleErrorHandler?.setRetry(execute);
-
-  try {
-    execute();
-    window.SimpleIdleErrorHandler?.clearContext();
-    window.SimpleIdleErrorHandler?.setRetry(null);
-  } catch (error) {
-    window.SimpleIdleErrorHandler?.report(error, {
-      phase: "Phase 7",
-      operation: action,
-      file: "phase7.js"
-    });
-    throw error;
-  }
 });
 
 document.querySelectorAll(".tab").forEach(button => {

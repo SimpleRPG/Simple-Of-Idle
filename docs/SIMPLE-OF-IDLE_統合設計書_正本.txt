@@ -2648,7 +2648,7 @@ Phase 7だけの別保存領域や別セーブシステムを追加しない。
 
 - `window.error`
 - `unhandledrejection`
-- `runErrorSafeOperation(phase, operation, file, callback)` を通るゲーム操作、タブ切替、画面再描画、Phase 3〜7の初期化、定期タイマー、表示状態変更、終了時保存
+- `runErrorSafeOperation(phase, operation, file, callback)` を通るゲーム操作（冒険者選択・転職・スキル・施設・装備・雇用・採取・製作・探索・研究・コレクション・プレステージ・新世界）、保存操作（手動保存・書き出し・読み込み・リセット・旧v1削除）、タブ切替、画面再描画、Phase 3〜7の初期化、定期タイマー、表示状態変更、終了時保存
 - セーブ処理など、既存処理側で捕捉している重大な失敗処理
 - ファイル読み込みのような非同期イベントは、Promiseの成否まで発生元・処理名・再試行先を保持する
 

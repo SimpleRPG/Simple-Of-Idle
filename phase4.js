@@ -1001,7 +1001,7 @@ document.addEventListener("click", event => {
 
   const action = button.dataset.phase4Action;
   const id = button.dataset.id;
-  const execute = createErrorSafeRetry(() => {
+  runErrorSafeOperation("Phase 4", action || "不明", "phase4.js", () => {
     if (action === "map") phase4MapSelect(id);
     if (action === "dungeon") phase4DungeonStart(id);
     if (action === "boss") phase4BossStart(id);
@@ -1012,27 +1012,6 @@ document.addEventListener("click", event => {
     phase4Render();
     saveState();
   });
-
-  window.SimpleIdleErrorHandler?.setRetry(null);
-  window.SimpleIdleErrorHandler?.setContext({
-    phase: "Phase 4",
-    operation: action,
-    file: "phase4.js"
-  });
-  window.SimpleIdleErrorHandler?.setRetry(execute);
-
-  try {
-    execute();
-    window.SimpleIdleErrorHandler?.clearContext();
-    window.SimpleIdleErrorHandler?.setRetry(null);
-  } catch (error) {
-    window.SimpleIdleErrorHandler?.report(error, {
-      phase: "Phase 4",
-      operation: action,
-      file: "phase4.js"
-    });
-    throw error;
-  }
 });
 
 document.querySelectorAll(".tab").forEach(button => {

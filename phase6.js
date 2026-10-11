@@ -714,7 +714,7 @@ document.addEventListener("click", event => {
   if (!button) return;
 
   const action = button.dataset.phase6Action;
-  const execute = createErrorSafeRetry(() => {
+  runErrorSafeOperation("Phase 6", action || "不明", "phase6.js", () => {
     if (action === "rebirth") {
       phase6DoRebirth();
     }
@@ -738,27 +738,6 @@ document.addEventListener("click", event => {
     render();
     phase6Render();
   });
-
-  window.SimpleIdleErrorHandler?.setRetry(null);
-  window.SimpleIdleErrorHandler?.setContext({
-    phase: "Phase 6",
-    operation: action,
-    file: "phase6.js"
-  });
-  window.SimpleIdleErrorHandler?.setRetry(execute);
-
-  try {
-    execute();
-    window.SimpleIdleErrorHandler?.clearContext();
-    window.SimpleIdleErrorHandler?.setRetry(null);
-  } catch (error) {
-    window.SimpleIdleErrorHandler?.report(error, {
-      phase: "Phase 6",
-      operation: action,
-      file: "phase6.js"
-    });
-    throw error;
-  }
 });
 
 document.querySelectorAll(".tab").forEach(button => {
