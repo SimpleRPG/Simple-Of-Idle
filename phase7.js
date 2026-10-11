@@ -1209,12 +1209,17 @@ function phase7PatchProduction() {
       const multiplier = phase7ProductionMultiplier();
 
       phase3AddResource = function(id, amount, ...args) {
-        return originalAddResource.call(
+        const baseAmount = Number(amount) || 0;
+        const result = originalAddResource.call(
           this,
           id,
-          (Number(amount) || 0) * multiplier,
+          baseAmount * multiplier,
           ...args
         );
+        state.phase3.produced[id] =
+          (Number(state.phase3.produced[id]) || 0) +
+          baseAmount * (multiplier - 1);
+        return result;
       };
 
       try {
