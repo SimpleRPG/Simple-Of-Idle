@@ -244,6 +244,10 @@ function runErrorSafeOperation(phase, operation, file, callback, options = {}) {
 
   const failed = error => {
     handler?.report(error, { phase, operation, file });
+    // 最後のPhaseを含む初期化失敗でも、全Phaseを最初から再実行できるようにする。
+    if (options.retryPageReloadOnModal) {
+      handler?.setRetry(() => window.location.reload());
+    }
     // 例外は共通モーダルへ集約済みなので再送出せず、window.errorによる二重報告を避ける。
     return undefined;
   };
