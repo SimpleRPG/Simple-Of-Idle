@@ -1292,6 +1292,13 @@ function phase7RenderProduction() {
 
   root.innerHTML = PHASE7_RECIPES.map(recipe => {
     const unlocked = state.phase7.unlockedRecipes.includes(recipe.id);
+    const phase3Recipe = [
+      ...(typeof PRODUCTION_RECIPES !== "undefined" ? PRODUCTION_RECIPES : []),
+      ...(typeof CRAFT_RECIPES !== "undefined" ? CRAFT_RECIPES : [])
+    ].find(item => item.phase7Id === recipe.id);
+    const canStore = !phase3Recipe ||
+      typeof phase3CanStoreCraftOutput !== "function" ||
+      phase3CanStoreCraftOutput(phase3Recipe);
     const inputs = Object.entries(recipe.inputs)
       .map(([id, amount]) => `${id} ×${amount}`)
       .join(" / ");
@@ -1301,10 +1308,12 @@ function phase7RenderProduction() {
         <strong>${unlocked ? "⚒️" : "🔒"} ${unlocked ? recipe.name : "未解禁生産"}</strong>
         <small>${unlocked ? recipe.description : `世界「${recipe.world}」到達で解禁`}</small>
         ${unlocked ? `<span class="phase7-chip">素材: ${inputs}</span>` : ""}
+        ${unlocked && !canStore ? "<small>倉庫の空き容量が不足しています。</small>" : ""}
         ${unlocked ? `
           <button class="small-button"
             data-phase7-action="craft"
-            data-id="${recipe.id}">生産</button>` : ""}
+            data-id="${recipe.id}"
+            ${canStore ? "" : "disabled"}>生産</button>` : ""}
       </div>
     `;
   }).join("");

@@ -337,6 +337,41 @@ function phase3PatchEnhancement() {
   };
 }
 
+function phase3CanStoreCraftOutput(recipe) {
+  if (!recipe?.output || recipe.output.equipment) return true;
+
+  const rawMultiplier = typeof phase7ProductionMultiplier === "function"
+    ? Number(phase7ProductionMultiplier())
+    : 1;
+  const multiplier = Number.isFinite(rawMultiplier) && rawMultiplier >= 0
+    ? rawMultiplier
+    : 1;
+  const resources = { ...(state.phase3.resources || {}) };
+  const capacity = phase3WarehouseCapacity();
+
+  for (const [id, baseAmount] of Object.entries(recipe.output)) {
+    const numericBaseAmount = Number(baseAmount);
+    const requested =
+      Math.max(0, Number.isFinite(numericBaseAmount) ? numericBaseAmount : 0) *
+      multiplier;
+    if (requested <= 0) continue;
+
+    if (!resources[id]) resources[id] = 0;
+
+    const used = Object.values(resources).reduce(
+      (sum, value) => sum + Math.max(0, Math.floor(Number(value) || 0)),
+      0
+    );
+    const free = Math.max(0, capacity - used);
+    const accepted = Math.min(requested, free);
+
+    if (accepted + 1e-9 < requested) return false;
+    resources[id] += accepted;
+  }
+
+  return true;
+}
+
 function phase3Craft(recipeId) {
   const recipe = [...PRODUCTION_RECIPES, ...CRAFT_RECIPES]
     .find(entry => entry.id === recipeId);
@@ -366,6 +401,12 @@ function phase3Craft(recipeId) {
 
   if (recipe.type === "alchemy" && !(state.base.facilities.warehouse > 0)) {
     addLog("錬金工房の基盤として倉庫をLv.1以上にしてください。");
+    phase3Render();
+    return;
+  }
+
+  if (!phase3CanStoreCraftOutput(recipe)) {
+    addLog(`${recipe.name} は倉庫の空き容量が不足しているため生産できない。素材は消費されていない。`);
     phase3Render();
     return;
   }
@@ -545,6 +586,8 @@ function phase3RecipeHTML(recipe) {
   ).join(" / ");
 
   const available = phase3CanAfford(recipe.inputs);
+  const canStore = phase3CanStoreCraftOutput(recipe);
+  const storageBlocked = !recipe.output?.equipment && !canStore;
 
   return `
     <div class="recipe">
@@ -552,11 +595,12 @@ function phase3RecipeHTML(recipe) {
         <strong>${recipe.icon} ${recipe.name}</strong>
         <small>${recipe.description}</small>
         <small>必要: ${inputText}</small>
+        ${storageBlocked ? "<small>倉庫の空き容量が不足しています。</small>" : ""}
       </div>
       <button class="small-button"
         data-phase3-action="craft"
         data-recipe="${recipe.id}"
-        ${available ? "" : "disabled"}>製作</button>
+        ${available && canStore ? "" : "disabled"}>製作</button>
     </div>
   `;
 }
