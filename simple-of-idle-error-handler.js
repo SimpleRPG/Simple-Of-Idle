@@ -255,19 +255,6 @@
     };
   }
 
-  function run(operation, fn, meta = {}) {
-    const previous = { ...context };
-    setContext({ ...meta, operation });
-
-    try {
-      return fn();
-    } catch (error) {
-      report(error, { ...meta, operation });
-      throw error;
-    } finally {
-      context = previous;
-    }
-  }
 
   window.addEventListener("error", event => {
     report(
@@ -298,7 +285,6 @@
     setContext,
     clearContext,
     setRetry,
-    run,
     report,
     show,
     hide,
