@@ -1036,4 +1036,4 @@ runErrorSafeOperation("Phase 4", "初期化・既存戦闘接続・初期描画"
       saveState();
     }, { pauseWhileErrorModal: true });
   }, 10000);
-});
+}, { retryPageReloadOnModal: true });

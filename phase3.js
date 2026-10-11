@@ -694,4 +694,4 @@ runErrorSafeOperation("Phase 3", "初期化・初期描画", "phase3.js", () => 
       saveState();
     }, { pauseWhileErrorModal: true });
   }, 10000);
-});
+}, { retryPageReloadOnModal: true });

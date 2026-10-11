@@ -763,4 +763,4 @@ runErrorSafeOperation("Phase 6", "初期化・恒久効果接続・初期描画"
       saveState();
     }, { pauseWhileErrorModal: true });
   }, 10000);
-});
+}, { retryPageReloadOnModal: true });

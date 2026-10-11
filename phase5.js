@@ -824,4 +824,4 @@ runErrorSafeOperation("Phase 5", "初期化・既存処理接続・初期描画"
       saveState();
     }, { pauseWhileErrorModal: true });
   }, 10000);
-});
+}, { retryPageReloadOnModal: true });

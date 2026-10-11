@@ -220,8 +220,13 @@ function runErrorSafeOperation(phase, operation, file, callback, options = {}) {
   const modal = document.getElementById("simpleIdleErrorModal");
   const modalActive = Boolean(modal && !modal.hidden);
 
-  // モーダル表示中も既存の再試行先を保持する。ボタン操作で再試行先を置換しない。
-  if (modalActive) return;
+  // 通常操作は再試行先を保持する。後続初期化がスキップされる場合だけ全体再読み込みへ切り替える。
+  if (modalActive) {
+    if (options.retryPageReloadOnModal) {
+      handler?.setRetry(() => window.location.reload());
+    }
+    return;
+  }
 
   const retry = createErrorSafeRetry(callback);
   const execute = () => {

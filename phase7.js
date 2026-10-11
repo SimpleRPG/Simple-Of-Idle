@@ -1604,4 +1604,4 @@ runErrorSafeOperation("Phase 7", "初期化・既存システム接続・初期�
       saveState();
     }, { pauseWhileErrorModal: true });
   }, 10000);
-});
+}, { retryPageReloadOnModal: true });
