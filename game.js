@@ -209,20 +209,34 @@ function createErrorSafeRetry(operation) {
   };
 }
 
+let errorSafeOperationPending = false;
+
 function runErrorSafeOperation(phase, operation, file, callback, options = {}) {
   const handler = window.SimpleIdleErrorHandler;
+
+  // 非同期操作中は、別操作に発生元・処理名・再試行先を上書きさせない。
+  if (errorSafeOperationPending) return;
+
   const modal = document.getElementById("simpleIdleErrorModal");
   const modalActive = Boolean(modal && !modal.hidden);
 
-  // 表示中は状態変更を続行しない。周期処理は元の再試行先を保持し、初期化途中なら全体を再読込する。
-  if (modalActive) {
-    if (!options.pauseWhileErrorModal) {
-      handler?.setRetry(() => window.location.reload());
-    }
-    return;
-  }
+  // モーダル表示中も既存の再試行先を保持する。ボタン操作で再試行先を置換しない。
+  if (modalActive) return;
 
-  const execute = createErrorSafeRetry(callback);
+  const retry = createErrorSafeRetry(callback);
+  const execute = () => {
+    if (errorSafeOperationPending) return;
+
+    const result = retry();
+    if (result && typeof result.then === "function") {
+      errorSafeOperationPending = true;
+      return Promise.resolve(result).finally(() => {
+        errorSafeOperationPending = false;
+      });
+    }
+    return result;
+  };
+
   const failed = error => {
     handler?.report(error, { phase, operation, file });
     // 例外は共通モーダルへ集約済みなので再送出せず、window.errorによる二重報告を避ける。
