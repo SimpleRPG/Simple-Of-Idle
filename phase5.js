@@ -428,7 +428,8 @@ function phase5UpdateCollectionBonus() {
   const materials = Object.values(state.phase5.materials || {}).filter(item => item.discoveredAt).length;
   const discoveries = state.phase5.discoveries.length;
   const pets = state.phase5.pets.length;
-  const achievementsCollection = Number(phase5AchievementEffects().collection) || 0;
+  const achievements = Object.values(state.phase5.achievements || {}).filter(Boolean).length;
+  const achievementCollectionReward = Number(phase5AchievementEffects().collection) || 0;
   const titles = state.phase5.titles.length;
 
   state.phase5.collectionBonus =
@@ -438,7 +439,8 @@ function phase5UpdateCollectionBonus() {
       (materials * 0.003) +
       (discoveries * 0.01) +
       (pets * 0.015) +
-      achievementsCollection +
+      (achievements * 0.003) +
+      achievementCollectionReward +
       (titles * 0.005)
     );
 }
