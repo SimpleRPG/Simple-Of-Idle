@@ -518,7 +518,7 @@ function phase3InjectUI() {
   document.querySelectorAll(".tab").forEach(button => {
     button.addEventListener("click", () => {
       if (button.dataset.tab === "production") {
-        phase3Render();
+        runErrorSafeOperation("Phase 3", "生産画面の再描画", "phase3.js", phase3Render);
       }
     });
   });
@@ -665,23 +665,33 @@ document.addEventListener("click", event => {
   if (!button) return;
 
   const action = button.dataset.phase3Action;
+  const operation = action === "craft"
+    ? "製作"
+    : action === "assignment"
+      ? "採取担当変更"
+      : `未分類操作: ${action || "不明"}`;
 
-  if (action === "assignment") {
-    phase3SetAssignment(
-      Number(button.dataset.adventurer),
-      button.dataset.assignment
-    );
-  }
+  runErrorSafeOperation("Phase 3", operation, "phase3.js", () => {
+    if (action === "assignment") {
+      phase3SetAssignment(
+        Number(button.dataset.adventurer),
+        button.dataset.assignment
+      );
+    }
 
-  if (action === "craft") {
-    phase3Craft(button.dataset.recipe);
-  }
+    if (action === "craft") {
+      phase3Craft(button.dataset.recipe);
+    }
+  });
 });
 
-phase3Init();
-
-setInterval(() => {
-  phase3ProcessOffline();
-  phase3Render();
-  saveState();
-}, 10000);
+runErrorSafeOperation("Phase 3", "初期化・初期描画", "phase3.js", () => {
+  phase3Init();
+  setInterval(() => {
+    runErrorSafeOperation("Phase 3", "定期採取・生産更新・保存", "phase3.js", () => {
+      phase3ProcessOffline();
+      phase3Render();
+      saveState();
+    }, { pauseWhileErrorModal: true });
+  }, 10000);
+});

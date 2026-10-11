@@ -1037,18 +1037,24 @@ document.addEventListener("click", event => {
 
 document.querySelectorAll(".tab").forEach(button => {
   button.addEventListener("click", () => {
-    if (button.dataset.tab === "phase4") phase4Render();
+    if (button.dataset.tab === "phase4") {
+      runErrorSafeOperation("Phase 4", "探索・研究画面の再描画", "phase4.js", phase4Render);
+    }
   });
 });
 
-phase4EnsureState();
-phase4PatchBattle();
-phase4ProcessOffline();
-phase4Render();
-saveState();
-
-setInterval(() => {
+runErrorSafeOperation("Phase 4", "初期化・既存戦闘接続・初期描画", "phase4.js", () => {
+  phase4EnsureState();
+  phase4PatchBattle();
   phase4ProcessOffline();
   phase4Render();
   saveState();
-}, 10000);
+
+  setInterval(() => {
+    runErrorSafeOperation("Phase 4", "定期探索・研究・イベント更新・保存", "phase4.js", () => {
+      phase4ProcessOffline();
+      phase4Render();
+      saveState();
+    }, { pauseWhileErrorModal: true });
+  }, 10000);
+});

@@ -764,20 +764,24 @@ document.addEventListener("click", event => {
 document.querySelectorAll(".tab").forEach(button => {
   button.addEventListener("click", () => {
     if (button.dataset.tab === "phase6") {
-      phase6Render();
+      runErrorSafeOperation("Phase 6", "プレステージ画面の再描画", "phase6.js", phase6Render);
     }
   });
 });
 
-phase6EnsureState();
-phase6RefreshUnlocks();
-phase6PatchStats();
-phase6PatchActivityProgress();
-phase6Render();
-saveState();
-
-setInterval(() => {
+runErrorSafeOperation("Phase 6", "初期化・恒久効果接続・初期描画", "phase6.js", () => {
+  phase6EnsureState();
   phase6RefreshUnlocks();
+  phase6PatchStats();
+  phase6PatchActivityProgress();
   phase6Render();
   saveState();
-}, 10000);
+
+  setInterval(() => {
+    runErrorSafeOperation("Phase 6", "定期プレステージ更新・保存", "phase6.js", () => {
+      phase6RefreshUnlocks();
+      phase6Render();
+      saveState();
+    }, { pauseWhileErrorModal: true });
+  }, 10000);
+});

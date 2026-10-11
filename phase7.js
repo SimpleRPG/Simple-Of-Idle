@@ -1597,28 +1597,32 @@ document.addEventListener("click", event => {
 document.querySelectorAll(".tab").forEach(button => {
   button.addEventListener("click", () => {
     if (button.dataset.tab === "phase7") {
-      phase7Render();
+      runErrorSafeOperation("Phase 7", "新世界画面の再描画", "phase7.js", phase7Render);
     }
   });
 });
 
-phase7EnsureState();
-phase7IntegrateExistingSystems();
-phase7RefreshUnlocks();
-phase7PatchStats();
-phase7PatchProduction();
-phase7PatchOfflineProcessing();
-
-// Phase 3/4の保存済み処理時刻を使い、全補正の登録後に共通経路を一度だけ進める。
-phase3ProcessOffline();
-phase4ProcessOffline();
-
-phase7Render();
-saveState();
-
-setInterval(() => {
+runErrorSafeOperation("Phase 7", "初期化・既存システム接続・初期描画", "phase7.js", () => {
+  phase7EnsureState();
+  phase7IntegrateExistingSystems();
   phase7RefreshUnlocks();
-  phase7RefreshCollections();
+  phase7PatchStats();
+  phase7PatchProduction();
+  phase7PatchOfflineProcessing();
+
+  // Phase 3/4の保存済み処理時刻を使い、全補正の登録後に共通経路を一度だけ進める。
+  phase3ProcessOffline();
+  phase4ProcessOffline();
+
   phase7Render();
   saveState();
-}, 10000);
+
+  setInterval(() => {
+    runErrorSafeOperation("Phase 7", "定期新世界・研究・コレクション更新・保存", "phase7.js", () => {
+      phase7RefreshUnlocks();
+      phase7RefreshCollections();
+      phase7Render();
+      saveState();
+    }, { pauseWhileErrorModal: true });
+  }, 10000);
+});

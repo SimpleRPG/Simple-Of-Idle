@@ -820,25 +820,29 @@ document.addEventListener("click", event => {
 document.querySelectorAll(".tab").forEach(button => {
   button.addEventListener("click", () => {
     if (button.dataset.tab === "phase5") {
-      phase5Render();
+      runErrorSafeOperation("Phase 5", "コレクション画面の再描画", "phase5.js", phase5Render);
     }
   });
 });
 
-phase5EnsureState();
-phase5PatchBattle();
-phase5PatchStats();
-phase5PatchResourceGain();
-phase5RegisterAllExisting();
-phase5Render();
-saveState();
-
-setInterval(() => {
-  phase5RegisterMaterials();
-  phase5RegisterDiscoveries();
-  phase5CheckAchievements();
-  phase5CheckTitles();
-  phase5UpdateCollectionBonus();
+runErrorSafeOperation("Phase 5", "初期化・既存処理接続・初期描画", "phase5.js", () => {
+  phase5EnsureState();
+  phase5PatchBattle();
+  phase5PatchStats();
+  phase5PatchResourceGain();
+  phase5RegisterAllExisting();
   phase5Render();
   saveState();
-}, 10000);
+
+  setInterval(() => {
+    runErrorSafeOperation("Phase 5", "定期図鑑・実績・称号更新・保存", "phase5.js", () => {
+      phase5RegisterMaterials();
+      phase5RegisterDiscoveries();
+      phase5CheckAchievements();
+      phase5CheckTitles();
+      phase5UpdateCollectionBonus();
+      phase5Render();
+      saveState();
+    }, { pauseWhileErrorModal: true });
+  }, 10000);
+});

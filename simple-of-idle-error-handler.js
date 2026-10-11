@@ -102,7 +102,17 @@
         return;
       }
       try {
-        retry();
+        const result = retry();
+        if (result && typeof result.then === "function") {
+          result.then(
+            () => {
+              clearContext();
+              setRetry(null);
+            },
+            error => report(error, context)
+          );
+          return;
+        }
         clearContext();
         setRetry(null);
       } catch (error) {

@@ -194,12 +194,58 @@ function createErrorSafeRetry(operation) {
     state = clone(snapshot);
 
     try {
-      return operation();
+      const result = operation();
+      if (result && typeof result.then === "function") {
+        return result.catch(error => {
+          state = clone(snapshot);
+          throw error;
+        });
+      }
+      return result;
     } catch (error) {
       state = clone(snapshot);
       throw error;
     }
   };
+}
+
+function runErrorSafeOperation(phase, operation, file, callback, options = {}) {
+  const handler = window.SimpleIdleErrorHandler;
+  const modal = document.getElementById("simpleIdleErrorModal");
+  const modalActive = Boolean(modal && !modal.hidden);
+
+  // 表示中は状態変更を続行しない。周期処理は元の再試行先を保持し、初期化途中なら全体を再読込する。
+  if (modalActive) {
+    if (!options.pauseWhileErrorModal) {
+      handler?.setRetry(() => window.location.reload());
+    }
+    return;
+  }
+
+  const execute = createErrorSafeRetry(callback);
+  const failed = error => {
+    handler?.report(error, { phase, operation, file });
+    throw error;
+  };
+  const succeeded = result => {
+    handler?.clearContext();
+    handler?.setRetry(null);
+    return result;
+  };
+
+  handler?.setRetry(null);
+  handler?.setContext({ phase, operation, file });
+  handler?.setRetry(execute);
+
+  try {
+    const result = execute();
+    if (result && typeof result.then === "function") {
+      return result.then(succeeded, failed);
+    }
+    return succeeded(result);
+  } catch (error) {
+    return failed(error);
+  }
 }
 
 function normalizeAdventurer(adventurer, fallbackId) {
@@ -378,11 +424,14 @@ function saveState() {
   } catch (error) {
     const indicator = document.getElementById("saveIndicator");
     if (indicator) indicator.textContent = "保存失敗";
+    const errorContext = window.SimpleIdleErrorHandler?.getContext?.() || {};
     window.SimpleIdleErrorHandler?.report(error, {
-      phase: "セーブ処理",
-      operation: "ゲーム状態の保存",
-      file: "game.js"
+      phase: errorContext.operation ? errorContext.phase : "セーブ処理",
+      operation: errorContext.operation || "ゲーム状態の保存",
+      file: errorContext.file || "game.js"
     });
+    // 保存失敗を成功扱いにせず、呼び出し元のスナップショット復元・再試行へ渡す。
+    throw error;
   }
 }
 
@@ -408,47 +457,55 @@ function exportSave() {
 }
 
 function importSaveFile(file) {
-  if (!file) return;
-
-  const reader = new FileReader();
-
-  reader.onload = () => {
-    try {
-      const imported = parseSave(String(reader.result || ""));
-
-      if (!imported) {
-        throw new Error("empty save");
-      }
-
-      const serialized = JSON.stringify(imported);
-
-      localStorage.setItem(SAVE_BACKUP_KEY, serialized);
-      localStorage.setItem(SAVE_KEY, serialized);
-      localStorage.removeItem(LEGACY_SAVE_KEY);
-
-      alert("セーブデータを読み込みました。ゲームを再読み込みします。");
-      location.reload();
-    } catch (error) {
-      alert("セーブデータを読み込めませんでした。Simple-Of-Idleのセーブファイルを選択してください。");
-      window.SimpleIdleErrorHandler?.report(error, {
-        phase: "セーブ処理",
-        operation: "セーブデータの読み込み",
-        file: "game.js"
-      });
+  return new Promise((resolve, reject) => {
+    if (!file) {
+      resolve();
+      return;
     }
-  };
 
-  reader.onerror = () => {
-    const error = new Error("セーブファイルの読み込みに失敗しました。");
-    alert(error.message);
-    window.SimpleIdleErrorHandler?.report(error, {
-      phase: "セーブ処理",
-      operation: "セーブファイルの読み込み",
-      file: "game.js"
-    });
-  };
+    const reader = new FileReader();
 
-  reader.readAsText(file);
+    reader.onload = () => {
+      try {
+        const imported = parseSave(String(reader.result || ""));
+        if (!imported) throw new Error("empty save");
+
+        const serialized = JSON.stringify(imported);
+        const previous = [
+          [SAVE_KEY, localStorage.getItem(SAVE_KEY)],
+          [SAVE_BACKUP_KEY, localStorage.getItem(SAVE_BACKUP_KEY)],
+          [LEGACY_SAVE_KEY, localStorage.getItem(LEGACY_SAVE_KEY)]
+        ];
+
+        try {
+          localStorage.setItem(SAVE_BACKUP_KEY, serialized);
+          localStorage.setItem(SAVE_KEY, serialized);
+          localStorage.removeItem(LEGACY_SAVE_KEY);
+        } catch (error) {
+          // インポート保存が途中で失敗した場合、元の保存領域へ戻す。
+          previous.forEach(([key, value]) => {
+            try {
+              if (value === null) localStorage.removeItem(key);
+              else localStorage.setItem(key, value);
+            } catch {}
+          });
+          throw error;
+        }
+
+        alert("セーブデータを読み込みました。ゲームを再読み込みします。");
+        location.reload();
+        resolve();
+      } catch (error) {
+        reject(error);
+      }
+    };
+
+    reader.onerror = () => {
+      reject(new Error("セーブファイルの読み込みに失敗しました。"));
+    };
+
+    reader.readAsText(file);
+  });
 }
 
 function resetSave() {
@@ -1221,9 +1278,10 @@ function showOfflineReport(report) {
 document.querySelectorAll(".tab").forEach(button => {
   button.addEventListener("click", () => {
     const tab = button.dataset.tab;
-
-    document.querySelectorAll(".tab").forEach(item => item.classList.toggle("active", item === button));
-    document.querySelectorAll(".tab-panel").forEach(panel => panel.classList.toggle("active", panel.id === `tab-${tab}`));
+    runErrorSafeOperation("画面遷移", `タブ切替: ${tab || "不明"}`, "game.js", () => {
+      document.querySelectorAll(".tab").forEach(item => item.classList.toggle("active", item === button));
+      document.querySelectorAll(".tab-panel").forEach(panel => panel.classList.toggle("active", panel.id === `tab-${tab}`));
+    });
   });
 });
 
@@ -1340,33 +1398,25 @@ document.getElementById("exportSave").addEventListener("click", () => {
 });
 
 document.getElementById("importSaveButton").addEventListener("click", () => {
-  document.getElementById("importSave").click();
+  runErrorSafeOperation("セーブ処理", "セーブファイル選択", "game.js", () => {
+    document.getElementById("importSave").click();
+  });
 });
 
 document.getElementById("importSave").addEventListener("change", event => {
   const file = event.target.files?.[0];
   if (!file) return;
 
-  window.SimpleIdleErrorHandler?.setContext({
-    phase: "セーブ処理",
-    operation: "セーブデータの読み込み",
-    file: "game.js"
+  const input = event.target;
+  runErrorSafeOperation("セーブ処理", "セーブデータの読み込み", "game.js", async () => {
+    try {
+      await importSaveFile(file);
+    } finally {
+      input.value = "";
+    }
+  }).catch(() => {
+    // runErrorSafeOperationが状態復元とモーダル通知を完了している。
   });
-  const execute = createErrorSafeRetry(() => importSaveFile(file));
-  window.SimpleIdleErrorHandler?.setRetry(execute);
-
-  try {
-    execute();
-  } catch (error) {
-    window.SimpleIdleErrorHandler?.report(error, {
-      phase: "セーブ処理",
-      operation: "セーブデータの読み込み",
-      file: "game.js"
-    });
-    throw error;
-  } finally {
-    event.target.value = "";
-  }
 });
 
 document.getElementById("resetSave").addEventListener("click", () => {
@@ -1416,29 +1466,35 @@ document.getElementById("deleteLegacySave").addEventListener("click", () => {
 });
 
 document.getElementById("closeOffline").addEventListener("click", () => {
-  document.getElementById("offlineModal").classList.add("hidden");
-  saveState();
+  runErrorSafeOperation("放置進行", "オフライン報告を閉じる", "game.js", () => {
+    document.getElementById("offlineModal").classList.add("hidden");
+    saveState();
+  });
 });
 
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "hidden") {
-    saveState();
-  } else {
-    const now = Date.now();
-    const seconds = Math.max(0, (now - state.lastSavedAt) / 1000);
-
-    if (seconds > 5) {
-      const report = processOffline(seconds);
+  runErrorSafeOperation("放置進行", "画面表示状態の変更・復帰処理", "game.js", () => {
+    if (document.visibilityState === "hidden") {
       saveState();
-      showOfflineReport(report);
-      render();
-    }
+    } else {
+      const now = Date.now();
+      const seconds = Math.max(0, (now - state.lastSavedAt) / 1000);
 
-    lastTick = now;
-  }
+      if (seconds > 5) {
+        const report = processOffline(seconds);
+        saveState();
+        showOfflineReport(report);
+        render();
+      }
+
+      lastTick = now;
+    }
+  });
 });
 
-window.addEventListener("beforeunload", saveState);
+window.addEventListener("beforeunload", () => {
+  runErrorSafeOperation("セーブ処理", "ページ終了時保存", "game.js", saveState);
+});
 
 function tick() {
   const now = Date.now();
@@ -1467,11 +1523,17 @@ function tick() {
   render();
 }
 
-const startupOffline = processOffline(
-  Math.max(0, (Date.now() - state.lastSavedAt) / 1000)
-);
+runErrorSafeOperation("起動処理", "初期オフライン進行・初期描画", "game.js", () => {
+  const startupOffline = processOffline(
+    Math.max(0, (Date.now() - state.lastSavedAt) / 1000)
+  );
 
-saveState();
-render();
-showOfflineReport(startupOffline);
-setInterval(tick, TICK_MS);
+  saveState();
+  render();
+  showOfflineReport(startupOffline);
+  setInterval(() => {
+    runErrorSafeOperation("ゲーム進行", "定期戦闘・自動保存・ホーム描画", "game.js", tick, {
+      pauseWhileErrorModal: true
+    });
+  }, TICK_MS);
+});
