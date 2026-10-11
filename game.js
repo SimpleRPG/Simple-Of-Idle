@@ -189,21 +189,66 @@ function clone(value) {
 
 function createErrorSafeRetry(operation) {
   const snapshot = clone(state);
+  const runtimeSnapshot = { lastTick, saveTimer, recoveredFromBackup };
+  const persistenceSnapshot = [
+    [SAVE_KEY, localStorage.getItem(SAVE_KEY)],
+    [SAVE_BACKUP_KEY, localStorage.getItem(SAVE_BACKUP_KEY)],
+    [LEGACY_SAVE_KEY, localStorage.getItem(LEGACY_SAVE_KEY)]
+  ];
+  let attemptCount = 0;
+
+  const restoreSnapshot = (originalError = null) => {
+    state = clone(snapshot);
+    lastTick = runtimeSnapshot.lastTick;
+    saveTimer = runtimeSnapshot.saveTimer;
+    recoveredFromBackup = runtimeSnapshot.recoveredFromBackup;
+
+    const failures = [];
+    persistenceSnapshot.forEach(([key, value]) => {
+      try {
+        if (value === null) localStorage.removeItem(key);
+        else localStorage.setItem(key, value);
+      } catch (rollbackError) {
+        const message = rollbackError instanceof Error
+          ? rollbackError.message
+          : String(rollbackError);
+        failures.push(`${key}: ${message}`);
+      }
+    });
+
+    if (failures.length > 0) {
+      const originalMessage = originalError instanceof Error
+        ? originalError.message
+        : String(originalError ?? "");
+      const prefix = originalError ? `処理失敗 (${originalMessage})。` : "";
+      const restoreError = new Error(
+        `${prefix}保存領域の復元に失敗しました: ${failures.join(" / ")}`
+      );
+      if (originalError) restoreError.cause = originalError;
+      throw restoreError;
+    }
+  };
 
   return () => {
+    // 2回目以降の試行前にも、前の試行が残した外部保存の変更を元へ戻す。
+    if (attemptCount > 0) restoreSnapshot();
     state = clone(snapshot);
+    lastTick = runtimeSnapshot.lastTick;
+    saveTimer = runtimeSnapshot.saveTimer;
+    recoveredFromBackup = runtimeSnapshot.recoveredFromBackup;
+    attemptCount += 1;
 
     try {
       const result = operation();
       if (result && typeof result.then === "function") {
         return result.catch(error => {
-          state = clone(snapshot);
+          restoreSnapshot(error);
           throw error;
         });
       }
       return result;
     } catch (error) {
-      state = clone(snapshot);
+      restoreSnapshot(error);
       throw error;
     }
   };
@@ -228,7 +273,7 @@ function runErrorSafeOperation(phase, operation, file, callback, options = {}) {
     return;
   }
 
-  const retry = createErrorSafeRetry(callback);
+  let retry = null;
   const failed = error => {
     handler?.report(error, { phase, operation, file });
     // 最後のPhaseを含む初期化失敗でも、全Phaseを最初から再実行できるようにする。
@@ -245,6 +290,7 @@ function runErrorSafeOperation(phase, operation, file, callback, options = {}) {
   const execute = () => {
     if (errorSafeOperationPending) return;
 
+    if (!retry) retry = createErrorSafeRetry(callback);
     const result = retry();
     if (result && typeof result.then === "function") {
       errorSafeOperationPending = true;
