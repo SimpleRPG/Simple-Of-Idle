@@ -215,7 +215,8 @@
       (meta.file || context.file || value.file || "");
     const now = Date.now();
 
-    if (key === lastKey && now - lastAt < 1500) return;
+    const modalVisible = Boolean(modal && !modal.hidden);
+    if (key === lastKey && now - lastAt < 1500 && modalVisible) return;
 
     lastKey = key;
     lastAt = now;

@@ -229,32 +229,35 @@ function runErrorSafeOperation(phase, operation, file, callback, options = {}) {
   }
 
   const retry = createErrorSafeRetry(callback);
-  const execute = () => {
-    if (errorSafeOperationPending) return;
-
-    const result = retry();
-    if (result && typeof result.then === "function") {
-      errorSafeOperationPending = true;
-      return Promise.resolve(result).finally(() => {
-        errorSafeOperationPending = false;
-      });
-    }
-    return result;
-  };
-
   const failed = error => {
     handler?.report(error, { phase, operation, file });
     // 最後のPhaseを含む初期化失敗でも、全Phaseを最初から再実行できるようにする。
     if (options.retryPageReloadOnModal) {
       handler?.setRetry(() => window.location.reload());
     }
-    // 例外は共通モーダルへ集約済みなので再送出せず、window.errorによる二重報告を避ける。
     return undefined;
   };
   const succeeded = result => {
     handler?.clearContext();
     handler?.setRetry(null);
     return result;
+  };
+  const execute = () => {
+    if (errorSafeOperationPending) return;
+
+    const result = retry();
+    if (result && typeof result.then === "function") {
+      errorSafeOperationPending = true;
+      return Promise.resolve(result)
+        .then(succeeded, error => {
+          failed(error);
+          throw error;
+        })
+        .finally(() => {
+          errorSafeOperationPending = false;
+        });
+    }
+    return succeeded(result);
   };
 
   handler?.setRetry(null);
@@ -264,9 +267,10 @@ function runErrorSafeOperation(phase, operation, file, callback, options = {}) {
   try {
     const result = execute();
     if (result && typeof result.then === "function") {
-      return result.then(succeeded, failed);
+      // 初回実行の拒否は共通モーダルへ通知済み。未処理Promiseにしない。
+      return result.catch(() => undefined);
     }
-    return succeeded(result);
+    return result;
   } catch (error) {
     return failed(error);
   }
