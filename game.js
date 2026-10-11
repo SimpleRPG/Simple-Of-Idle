@@ -401,6 +401,7 @@ function normalizeSavedState(saved) {
     ? saved.selectedAdventurerId
     : merged.adventurers[0].id;
 
+  merged.battleProgress = normalizeBattleProgress(merged.battleProgress);
   merged.version = 2;
   return merged;
 }
@@ -798,16 +799,27 @@ function maybeDropEquipment() {
   return item;
 }
 
+function normalizeBattleProgress(value) {
+  const progress = Number(value);
+  if (!Number.isFinite(progress) || progress < 0) return 0;
+  // 旧版では1を超える値が保存され得たため、復帰時に即時大量討伐を起こさない。
+  return Math.min(progress, 1 - 1e-9);
+}
+
+function battleSecondsPerKill(zone = ZONES[state.zoneIndex], stats = guildStats()) {
+  const interval = Math.max(1, Number(zone?.interval) || 1);
+  const hp = Math.max(1, Number(zone?.hp) || 1);
+  const attack = Math.max(1, Number(stats?.attack) || 1);
+  const rawSpeed = Number(stats?.battleSpeed);
+  const battleSpeed = Number.isFinite(rawSpeed) && rawSpeed > 0
+    ? Math.max(0.1, rawSpeed)
+    : 1;
+  return Math.max(1, interval / battleSpeed * hp / attack);
+}
+
 function processBattle() {
   const zone = ZONES[state.zoneIndex];
   const stats = guildStats();
-  const attack = Math.max(1, stats.attack);
-
-  state.battleProgress += Math.max(1, attack / zone.hp);
-
-  if (state.battleProgress < 1) return;
-
-  state.battleProgress -= 1;
   state.kills += 1;
 
   const crit = Math.random() < stats.critical;
@@ -835,14 +847,17 @@ function processBattle() {
 }
 
 function processOffline(seconds) {
-  if (seconds <= 5) return null;
+  const elapsedSeconds = Number(seconds);
+  if (!Number.isFinite(elapsedSeconds) || elapsedSeconds <= 0) return null;
 
-  const capped = Math.min(seconds, MAX_OFFLINE_SECONDS);
+  const capped = Math.min(elapsedSeconds, MAX_OFFLINE_SECONDS);
   const zone = ZONES[state.zoneIndex];
   const stats = guildStats();
-  const secondsPerBattle = Math.max(1, zone.interval / stats.battleSpeed * zone.hp / Math.max(1, stats.attack));
-
-  const battles = Math.floor(capped / secondsPerBattle);
+  const secondsPerBattle = battleSecondsPerKill(zone, stats);
+  const totalProgress = normalizeBattleProgress(state.battleProgress) + capped / secondsPerBattle;
+  const progressEpsilon = Number.EPSILON * Math.max(1, Math.abs(totalProgress));
+  const battles = Math.floor(totalProgress + progressEpsilon);
+  state.battleProgress = normalizeBattleProgress(totalProgress - battles);
   const baseXp = Math.floor((zone.xp[0] + zone.xp[1]) / 2);
   const baseGold = Math.floor((zone.gold[0] + zone.gold[1]) / 2);
   const xp = Math.floor(battles * baseXp * stats.xpMultiplier);
@@ -874,7 +889,10 @@ function processOffline(seconds) {
     });
   }
 
-  addLog(`放置中に${battles.toLocaleString()}戦をギルド全体で自動処理した。`);
+  if (battles > 0) {
+    addLog(`放置中に${battles.toLocaleString()}戦をギルド全体で自動処理した。`);
+  }
+  if (elapsedSeconds <= 5) return null;
 
   return {
     seconds: capped,
@@ -1131,9 +1149,13 @@ function renderHome() {
 
   document.getElementById("zoneName").textContent = zone.name;
   document.getElementById("enemyName").textContent = zone.enemy;
-  document.getElementById("battleBar").style.width = `${Math.min(100, state.battleProgress * 100)}%`;
+  const battleProgress = normalizeBattleProgress(state.battleProgress);
+  document.getElementById("battleBar").style.width = `${battleProgress * 100}%`;
+  const remainingBattleSeconds = Math.ceil(
+    (1 - battleProgress) * battleSecondsPerKill(zone, guild)
+  );
   document.getElementById("battleText").textContent =
-    `${Math.max(0, Math.ceil((1 - state.battleProgress) * zone.interval))}秒以内に次の戦闘`;
+    `${formatDuration(remainingBattleSeconds)}以内に次の戦闘`;
 
   document.getElementById("recentXp").textContent = `+${Math.floor(state.recentXp).toLocaleString()}`;
   document.getElementById("recentGold").textContent = `+${state.recentGold.toLocaleString()}`;
@@ -1480,20 +1502,18 @@ window.addEventListener("beforeunload", () => {
 
 function tick() {
   const now = Date.now();
-  const delta = Math.min(5, (now - lastTick) / 1000);
+  const delta = Math.max(0, Math.min(5, (now - lastTick) / 1000));
   lastTick = now;
 
   const zone = ZONES[state.zoneIndex];
   const stats = guildStats();
-  state.battleProgress += delta * stats.battleSpeed / zone.interval;
+  const secondsPerBattle = battleSecondsPerKill(zone, stats);
+  state.battleProgress = normalizeBattleProgress(state.battleProgress);
+  state.battleProgress += delta / secondsPerBattle;
 
-  if (state.battleProgress >= 1) {
-    const battles = Math.floor(state.battleProgress);
-    state.battleProgress -= battles;
-
-    for (let i = 0; i < battles; i++) {
-      processBattle();
-    }
+  while (state.battleProgress >= 1 - 1e-9) {
+    state.battleProgress = Math.max(0, state.battleProgress - 1);
+    processBattle();
   }
 
   saveTimer += delta;
