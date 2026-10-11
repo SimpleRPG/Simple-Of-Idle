@@ -538,10 +538,7 @@ function phase5RegisterAllExisting() {
 
   phase5RegisterMaterials();
 
-  const monsterId = phase5CurrentMonsterId();
-  if (state.kills > 0) {
-    phase5RegisterMonster(monsterId);
-  }
+  // 累計討伐数から現在エリアの遭遇を推定しない。実際の討伐はphase5PatchBattle()で登録する。
 
   phase5RegisterDiscoveries();
   phase5CheckAchievements();
