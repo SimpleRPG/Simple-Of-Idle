@@ -407,6 +407,7 @@ function phase6ResetNormalProgress() {
   state.gold = 0;
   state.kills = 0;
   state.zoneIndex = 0;
+  state.battleProgress = 0;
 
   if (Array.isArray(state.adventurers)) {
     state.adventurers.forEach((adventurer, index) => {

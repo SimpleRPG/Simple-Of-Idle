@@ -877,6 +877,9 @@ function phase7ProcessActivity(seconds) {
         phase7AddResource(resource, amount);
       });
 
+      if (typeof phase4RefreshPhase5Progress === "function") {
+        phase4RefreshPhase5Progress();
+      }
       addLog(`👑 ${boss.name} を撃破した。`);
       state.phase4.activeActivity = null;
       state.phase4.mode = "map";

@@ -1048,7 +1048,7 @@ Simple-Of-Idleは、ユーザーのためにChatGPTが設計・実装・検証�
 → 未知領域
 → 新世界
 
-エリアごとに敵・素材・装備・ボス・イベント・解禁条件を持つ。
+エリアごとに敵・素材・装備・ボス・イベント・解禁条件を持つ。通常戦闘エリアは `PHASE4_MAPS` と `ZONES` を0始まりの `zoneIndex` で一対一に対応させ、村周辺・草原・深緑の森・鉱脈洞窟・古代遺跡・魔王領の6エリアを使用する。既存の深緑の森は戦闘データ名「森」を維持し、マップ表示名との差はモンスターID対応で吸収する。洞窟・古代遺跡・魔王領にも敵HP・経験値・ゴールド・戦闘間隔を定義し、選択した地域の通常敵を戦闘・報酬・図鑑へ接続する。マップ選択時は `state.zoneIndex` と `state.phase4.selectedMap` を同期し、前エリアの `state.battleProgress` を0へ戻す。有効な保存済みマップIDがある場合はそのエリアへ `zoneIndex` を同期する。旧セーブに有効なマップIDがない場合は保存済み `zoneIndex` からマップを復元する。プレステージの通常進行リセットでは `village`・`zoneIndex = 0`・`battleProgress = 0` へ同時に戻す。
 
 ---
 
@@ -1290,6 +1290,8 @@ Phase 5の研究系実績・称号が参照する完了研究数は、Phase 4の
 - 撃破数
 - 初回撃破
 - レア情報
+
+通常エリアの敵IDは、スライム（`slime`）、ゴブリン（`goblin`）、ウルフ（`wolf`）、洞窟ゴブリン（`cave-goblin`）、遺跡守衛（`ruins-guard`）、魔族兵（`demon-soldier`）とする。洞窟の守護者（`cave-guardian`）、古代遺跡の守護者（`ruins-guardian`）、魔王領の支配者（`demon-lord`）はボス用IDを維持し、通常エリアの撃破をボスの撃破数へ加算しない。`ZONES[state.zoneIndex].name` から通常敵IDを一意に選び、すべての通常討伐はそのIDへ記録する。Phase 4の `state.phase4.defeatedBosses` とPhase 7のボス撃破記録は既存のモンスター図鑑へ連携し、既に保存済みの撃破記録もロード時に一度だけ図鑑へ反映する。旧ID `ancient-guardian` は、実際の `ruins-guardian` 撃破記録がある場合だけ新IDへ移行し、旧IDに残っていた通常戦闘の誤集計をボス撃破数として引き継がない。
 
 ---
 

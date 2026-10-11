@@ -7,7 +7,10 @@ const TICK_MS = 1000;
 const ZONES = [
   { name: "村周辺", enemy: "スライム", hp: 30, gold: [5, 9], xp: [18, 25], interval: 5 },
   { name: "草原", enemy: "ゴブリン", hp: 55, gold: [10, 18], xp: [30, 42], interval: 7 },
-  { name: "森", enemy: "ウルフ", hp: 95, gold: [18, 30], xp: [48, 65], interval: 9 }
+  { name: "森", enemy: "ウルフ", hp: 95, gold: [18, 30], xp: [48, 65], interval: 9 },
+  { name: "鉱脈洞窟", enemy: "洞窟ゴブリン", hp: 145, gold: [28, 42], xp: [70, 95], interval: 9 },
+  { name: "古代遺跡", enemy: "遺跡守衛", hp: 260, gold: [58, 85], xp: [125, 165], interval: 11 },
+  { name: "魔王領", enemy: "魔族兵", hp: 440, gold: [105, 150], xp: [220, 285], interval: 13 }
 ];
 
 const JOBS = {
@@ -405,6 +408,10 @@ function normalizeSavedState(saved) {
     ? saved.selectedAdventurerId
     : merged.adventurers[0].id;
 
+  merged.zoneIndex = Math.max(
+    0,
+    Math.min(ZONES.length - 1, Math.floor(Number(merged.zoneIndex) || 0))
+  );
   merged.battleProgress = normalizeBattleProgress(merged.battleProgress);
   merged.version = 2;
   return merged;

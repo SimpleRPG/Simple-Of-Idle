@@ -30,8 +30,11 @@ const PHASE5_MONSTERS = [
   { id: "slime", name: "スライム", zone: "村周辺", minLevel: 1 },
   { id: "goblin", name: "ゴブリン", zone: "草原", minLevel: 1 },
   { id: "wolf", name: "ウルフ", zone: "森", minLevel: 1 },
+  { id: "cave-goblin", name: "洞窟ゴブリン", zone: "鉱脈洞窟", minLevel: 6 },
+  { id: "ruins-guard", name: "遺跡守衛", zone: "古代遺跡", minLevel: 10 },
+  { id: "demon-soldier", name: "魔族兵", zone: "魔王領", minLevel: 16 },
   { id: "cave-guardian", name: "洞窟の守護者", zone: "鉱脈洞窟", minLevel: 5 },
-  { id: "ancient-guardian", name: "古代遺跡の守護者", zone: "古代遺跡", minLevel: 8 },
+  { id: "ruins-guardian", name: "古代遺跡の守護者", zone: "古代遺跡", minLevel: 8 },
   { id: "demon-lord", name: "魔王領の支配者", zone: "魔王領", minLevel: 12 }
 ];
 
@@ -148,6 +151,34 @@ function phase5EnsureState() {
       Boolean(previous.equipmentCountMigrationPending) || needsEquipmentMigration
   };
   state.phase5.version = PHASE5_VERSION;
+
+  // 古いIDには実際のボス撃破ではなく通常敵の記録が混在し得るため、保存済みボス撃破記録を基準に移行する。
+  const legacyRuinsGuardian = state.phase5.monsters["ancient-guardian"];
+  const defeatedBosses = Array.isArray(state.phase4?.defeatedBosses)
+    ? state.phase4.defeatedBosses
+    : [];
+  if (legacyRuinsGuardian && !state.phase5.monsters["ruins-guardian"] && defeatedBosses.includes("ruins-guardian")) {
+    state.phase5.monsters["ruins-guardian"] = {
+      discovered: true,
+      kills: 1,
+      firstSeenAt: legacyRuinsGuardian.firstSeenAt || Date.now(),
+      firstDefeatedAt: Date.now()
+    };
+  }
+  delete state.phase5.monsters["ancient-guardian"];
+
+  ["cave-guardian", "ruins-guardian", "demon-lord"].forEach(id => {
+    if (!defeatedBosses.includes(id)) return;
+    const current = state.phase5.monsters[id] || {};
+    if (current.firstDefeatedAt) return;
+    state.phase5.monsters[id] = {
+      ...current,
+      discovered: true,
+      kills: Math.max(1, Number(current.kills) || 0),
+      firstSeenAt: current.firstSeenAt || Date.now(),
+      firstDefeatedAt: Date.now()
+    };
+  });
 }
 
 function phase5RegisterMonster(id, extra = {}) {
@@ -177,9 +208,9 @@ function phase5CurrentMonsterId() {
     "草原": "goblin",
     "森": "wolf",
     "深緑の森": "wolf",
-    "鉱脈洞窟": "cave-guardian",
-    "古代遺跡": "ancient-guardian",
-    "魔王領": "demon-lord"
+    "鉱脈洞窟": "cave-goblin",
+    "古代遺跡": "ruins-guard",
+    "魔王領": "demon-soldier"
   };
   return mapping[zoneName] || "slime";
 }

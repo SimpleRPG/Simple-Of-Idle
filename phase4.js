@@ -65,7 +65,8 @@ const PHASE4_MAPS = [
     minLevel: 6,
     minKills: 45,
     research: "mine-survey",
-    boss: "cave-guardian"
+    boss: "cave-guardian",
+    zoneIndex: 3
   },
   {
     id: "ruins",
@@ -76,7 +77,8 @@ const PHASE4_MAPS = [
     minLevel: 10,
     minKills: 100,
     research: "ancient-study",
-    boss: "ruins-guardian"
+    boss: "ruins-guardian",
+    zoneIndex: 4
   },
   {
     id: "demon",
@@ -87,7 +89,8 @@ const PHASE4_MAPS = [
     minLevel: 16,
     minKills: 220,
     research: "advanced-exploration",
-    boss: "demon-lord"
+    boss: "demon-lord",
+    zoneIndex: 5
   }
 ];
 
@@ -261,6 +264,9 @@ const PHASE4_EVENTS = [
 ];
 
 function phase4EnsureState() {
+  const savedMapId = typeof state.phase4?.selectedMap === "string"
+    ? state.phase4.selectedMap
+    : "";
   if (!state.phase4 || typeof state.phase4 !== "object") {
     state.phase4 = clone(PHASE4_DEFAULT);
     state.phase4.lastProcessedAt = state.lastSavedAt || Date.now();
@@ -286,6 +292,20 @@ function phase4EnsureState() {
 
   state.phase4.lastProcessedAt =
     Number(state.phase4.lastProcessedAt) || Date.now();
+
+  const savedMap = PHASE4_MAPS.find(
+    map => map.id === savedMapId && Number.isInteger(map.zoneIndex)
+  );
+  if (savedMap) {
+    state.zoneIndex = savedMap.zoneIndex;
+  } else {
+    state.zoneIndex = Math.max(
+      0,
+      Math.min(ZONES.length - 1, Math.floor(Number(state.zoneIndex) || 0))
+    );
+    const matchingMap = PHASE4_MAPS.find(map => map.zoneIndex === state.zoneIndex);
+    state.phase4.selectedMap = matchingMap?.id || "village";
+  }
 }
 
 function phase4LeaderLevel() {
@@ -542,6 +562,7 @@ function phase4MapSelect(id) {
   if (typeof map.zoneIndex === "number") {
     state.zoneIndex = map.zoneIndex;
   }
+  state.battleProgress = 0;
 
   state.phase4.mapProgress = 0;
   addLog(`探索先を「${map.name}」へ変更した。`);
@@ -681,6 +702,7 @@ function phase4ProcessActivity(seconds) {
       if (!state.phase4.defeatedBosses.includes(boss.id)) {
         state.phase4.defeatedBosses.push(boss.id);
         phase4GrantReward(boss.reward);
+        phase4RefreshPhase5Progress();
         addLog(`ボス「${boss.name}」を撃破した。新しい研究・探索につながる報酬を獲得。`);
       }
       state.phase4.activeActivity = null;
