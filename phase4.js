@@ -702,6 +702,9 @@ function phase4ProcessActivity(seconds) {
       if (!state.phase4.defeatedBosses.includes(boss.id)) {
         state.phase4.defeatedBosses.push(boss.id);
         phase4GrantReward(boss.reward);
+        if (typeof phase5RegisterMonster === "function") {
+          phase5RegisterMonster(boss.id, { kills: 1 });
+        }
         phase4RefreshPhase5Progress();
         addLog(`ボス「${boss.name}」を撃破した。新しい研究・探索につながる報酬を獲得。`);
       }
