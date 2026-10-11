@@ -596,7 +596,9 @@ function phase3RecipeHTML(recipe) {
 
   const available = phase3CanAfford(recipe.inputs);
   const canStore = phase3CanStoreCraftOutput(recipe);
-  const storageBlocked = !recipe.output?.equipment && !canStore;
+  const materialBlocked = !available;
+  const storageBlocked =
+    available && !recipe.output?.equipment && !canStore;
 
   return `
     <div class="recipe">
@@ -604,6 +606,7 @@ function phase3RecipeHTML(recipe) {
         <strong>${recipe.icon} ${recipe.name}</strong>
         <small>${recipe.description}</small>
         <small>必要: ${inputText}</small>
+        ${materialBlocked ? "<small>必要な素材が不足しています。</small>" : ""}
         ${storageBlocked ? "<small>倉庫の空き容量が不足しています。</small>" : ""}
       </div>
       <button class="small-button"
