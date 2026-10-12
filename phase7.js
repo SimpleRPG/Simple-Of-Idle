@@ -781,6 +781,11 @@ function phase7DefeatBoss(id) {
     return;
   }
 
+  // 条件を満たして実際に挑戦を開始した時点で遭遇記録だけを付ける。
+  if (typeof phase5RegisterMonster === "function") {
+    phase5RegisterMonster(boss.id);
+  }
+
   state.phase4.activeActivity = {
     type: "phase7-boss",
     id,

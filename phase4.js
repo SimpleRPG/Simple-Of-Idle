@@ -599,6 +599,11 @@ function phase4BossStart(id) {
   if (phase4LeaderLevel() < boss.minLevel || !phase4ResearchDone(boss.unlock)) return;
   if (state.phase4.bossProgress[id] >= boss.hp) return;
 
+  // 条件を満たして実際に挑戦を開始した時点で遭遇記録だけを付ける。
+  if (typeof phase5RegisterMonster === "function") {
+    phase5RegisterMonster(boss.id);
+  }
+
   state.phase4.mode = "boss";
   state.phase4.activeActivity = {
     type: "boss",
