@@ -720,7 +720,16 @@ function phase4ProcessActivity(seconds) {
       return;
     }
 
-    const current = Number(state.phase4.bossProgress[boss.id]) || 0;
+    // 保存済み活動が既に撃破履歴を持つ場合は、報酬を再付与せず活動だけ解除する。
+    if (state.phase4.defeatedBosses.includes(boss.id)) {
+      state.phase4.activeActivity = null;
+      state.phase4.mode = "map";
+      return;
+    }
+
+    // 旧セーブの完了済み進行値を引き継がず、ゼロから残り時間を計算する。
+    const savedProgress = Number(state.phase4.bossProgress[boss.id]) || 0;
+    const current = savedProgress >= boss.hp ? 0 : Math.max(0, savedProgress);
     const next = Math.min(
       boss.hp,
       current + units * power

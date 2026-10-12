@@ -883,7 +883,9 @@ function phase7ProcessActivity(seconds) {
       return;
     }
 
-    const current = Number(state.phase4.bossProgress[progressId]) || 0;
+    // 撃破履歴がない旧セーブの完了済み進行値は、復帰時にもゼロへ正規化する。
+    const savedProgress = Number(state.phase4.bossProgress[progressId]) || 0;
+    const current = savedProgress >= boss.hp ? 0 : Math.max(0, savedProgress);
     const next = Math.min(
       boss.hp,
       current + units * power
