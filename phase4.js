@@ -746,6 +746,7 @@ function phase4ProcessActivity(seconds) {
     if (next >= raid.hp) {
       phase4GrantReward(raid.reward);
       addLog(`レイド「${raid.name}」を制圧した。`);
+      state.phase4.raidProgress[raid.id] = 0;
       state.phase4.activeActivity = null;
       state.phase4.mode = "map";
     }
