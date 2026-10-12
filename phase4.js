@@ -571,9 +571,17 @@ function phase4MapSelect(id) {
   phase4Render();
 }
 
+function phase4CanStartActivity() {
+  if (!state.phase4?.activeActivity) return true;
+
+  addLog("現在の遠征・戦闘が完了するまで、別のダンジョン・ボス・レイドは開始できない。");
+  return false;
+}
+
 function phase4DungeonStart(id) {
   const dungeon = PHASE4_DUNGEONS.find(entry => entry.id === id);
   if (!dungeon) return;
+  if (!phase4CanStartActivity()) return;
   if (phase4LeaderLevel() < dungeon.minLevel) return;
   if (!phase4ResearchDone(dungeon.research)) {
     addLog(`「${dungeon.name}」には研究「${dungeon.research}」が必要。`);
@@ -596,6 +604,7 @@ function phase4DungeonStart(id) {
 function phase4BossStart(id) {
   const boss = PHASE4_BOSSES.find(entry => entry.id === id);
   if (!boss) return;
+  if (!phase4CanStartActivity()) return;
   if (phase4LeaderLevel() < boss.minLevel || !phase4ResearchDone(boss.unlock)) return;
   if (state.phase4.bossProgress[id] >= boss.hp) return;
 
@@ -618,6 +627,7 @@ function phase4BossStart(id) {
 function phase4RaidStart(id) {
   const raid = PHASE4_RAIDS.find(entry => entry.id === id);
   if (!raid) return;
+  if (!phase4CanStartActivity()) return;
   if (phase4LeaderLevel() < raid.minLevel) return;
   if (state.adventurers.length < raid.minParty) {
     addLog(`「${raid.name}」には ${raid.minParty}人以上の冒険者が必要。`);

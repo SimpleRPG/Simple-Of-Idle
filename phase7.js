@@ -727,12 +727,8 @@ function phase7Craft(id) {
 function phase7ClearDungeon(id) {
   const dungeon = PHASE7_DUNGEONS.find(item => item.id === id);
   if (!dungeon || state.phase7.clearedDungeons.includes(id)) return;
+  if (!phase4CanStartActivity()) return;
   if (!dungeon.requirement()) return;
-
-  if (state.phase4?.activeActivity) {
-    addLog("現在の遠征が完了するまで、別のダンジョン・ボスには挑戦できない。");
-    return;
-  }
 
   const power = typeof adventurerStats === "function"
     ? state.adventurers.reduce(
@@ -762,12 +758,8 @@ function phase7ClearDungeon(id) {
 function phase7DefeatBoss(id) {
   const boss = PHASE7_BOSSES.find(item => item.id === id);
   if (!boss || state.phase7.defeatedBosses.includes(id)) return;
+  if (!phase4CanStartActivity()) return;
   if (!boss.requirement()) return;
-
-  if (state.phase4?.activeActivity) {
-    addLog("現在の遠征が完了するまで、別のダンジョン・ボスには挑戦できない。");
-    return;
-  }
 
   const power = typeof adventurerStats === "function"
     ? state.adventurers.reduce(

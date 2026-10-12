@@ -2205,6 +2205,8 @@ Phase 7のダンジョン・ボスは、ボタン押下時に即時クリア・�
 
 既存Phase 4の `state.phase4.activeActivity` と `phase4ProcessActivity()` を共通の進行基盤として利用する。
 
+同じ `state.phase4.activeActivity` は同時に1件の活動だけを保持する。Phase 4の `phase4DungeonStart()`・`phase4BossStart()`・`phase4RaidStart()` とPhase 7の `phase7ClearDungeon()`・`phase7DefeatBoss()` は、開始時に共通の `phase4CanStartActivity()` を必ず通す。別の活動が進行中なら開始を拒否し、既存活動・進行値・遭遇/撃破記録・報酬を変更しない。ボタンの無効化だけに依存せず、実処理の入口で競合を検査する。拒否時は共通の活動競合メッセージをログに記録する。
+
 ### ダンジョン
 
 Phase 7ダンジョン開始
