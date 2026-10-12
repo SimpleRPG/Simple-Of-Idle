@@ -849,6 +849,30 @@ function phase7ProcessActivity(seconds) {
     }
 
     const progressId = `phase7:${boss.id}`;
+    const hasPhase7Defeat = Array.isArray(state.phase7?.defeatedBosses) &&
+      state.phase7.defeatedBosses.includes(boss.id);
+    const hasPhase4Defeat = Array.isArray(state.phase4?.defeatedBosses) &&
+      state.phase4.defeatedBosses.includes(progressId);
+
+    // 保存済みの撃破履歴がある活動は報酬・討伐数を再加算せず、記録を整合させて終了する。
+    if (hasPhase7Defeat || hasPhase4Defeat) {
+      if (!state.phase7 || typeof state.phase7 !== "object") state.phase7 = {};
+      if (!Array.isArray(state.phase7.defeatedBosses)) state.phase7.defeatedBosses = [];
+      if (!state.phase7.defeatedBosses.includes(boss.id)) {
+        state.phase7.defeatedBosses.push(boss.id);
+      }
+      if (!Array.isArray(state.phase4.defeatedBosses)) state.phase4.defeatedBosses = [];
+      if (!state.phase4.defeatedBosses.includes(progressId)) {
+        state.phase4.defeatedBosses.push(progressId);
+      }
+      if (typeof phase5RestoreDefeatedBossRecords === "function") {
+        phase5RestoreDefeatedBossRecords();
+      }
+      state.phase4.activeActivity = null;
+      state.phase4.mode = "map";
+      return;
+    }
+
     const current = Number(state.phase4.bossProgress[progressId]) || 0;
     const next = Math.min(
       boss.hp,
