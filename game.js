@@ -1348,7 +1348,7 @@ function renderSkills() {
           <strong>${skill.name} Lv.${level}/${skill.max}</strong>
           <small>${skill.description}${level < skill.max ? ` / 次: ${cost}SP` : " / 最大"}</small>
         </div>
-        <button class="small-button" data-action="skill" data-skill="${id}" ${level >= skill.max || adventurer.skillPoints < cost ? "disabled" : "">習得</button>
+        <button class="small-button" data-action="skill" data-skill="${id}" ${level >= skill.max || adventurer.skillPoints < cost ? "disabled" : ""}>習得</button>
       </div>
     `;
   }).join("");
