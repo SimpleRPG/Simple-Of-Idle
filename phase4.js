@@ -606,7 +606,16 @@ function phase4BossStart(id) {
   if (!boss) return;
   if (!phase4CanStartActivity()) return;
   if (phase4LeaderLevel() < boss.minLevel || !phase4ResearchDone(boss.unlock)) return;
-  if (state.phase4.bossProgress[id] >= boss.hp) return;
+  if (state.phase4.defeatedBosses.includes(boss.id)) {
+    addLog(`ボス「${boss.name}」は撃破済みのため再挑戦できない。`);
+    return;
+  }
+
+  // 旧セーブの進行値だけで挑戦不能または即時報酬にならないよう正規化する。
+  const savedProgress = Number(state.phase4.bossProgress[id]) || 0;
+  state.phase4.bossProgress[id] = savedProgress >= boss.hp
+    ? 0
+    : Math.max(0, savedProgress);
 
   // 条件を満たして実際に挑戦を開始した時点で遭遇記録だけを付ける。
   if (typeof phase5RegisterMonster === "function") {

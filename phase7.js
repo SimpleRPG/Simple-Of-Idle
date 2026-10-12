@@ -757,7 +757,18 @@ function phase7ClearDungeon(id) {
 
 function phase7DefeatBoss(id) {
   const boss = PHASE7_BOSSES.find(item => item.id === id);
-  if (!boss || state.phase7.defeatedBosses.includes(id)) return;
+  if (!boss) return;
+
+  const progressId = `phase7:${id}`;
+  const defeatedInPhase4 = Array.isArray(state.phase4?.defeatedBosses) &&
+    state.phase4.defeatedBosses.includes(progressId);
+  if (state.phase7.defeatedBosses.includes(id) || defeatedInPhase4) {
+    if (defeatedInPhase4 && typeof phase5RestoreDefeatedBossRecords === "function") {
+      phase5RestoreDefeatedBossRecords();
+    }
+    addLog(`ボス「${boss.name}」は撃破済みのため再挑戦できない。`);
+    return;
+  }
   if (!phase4CanStartActivity()) return;
   if (!boss.requirement()) return;
 
@@ -784,8 +795,10 @@ function phase7DefeatBoss(id) {
     startedAt: Date.now()
   };
   state.phase4.mode = "boss";
-  state.phase4.bossProgress[`phase7:${id}`] =
-    Number(state.phase4.bossProgress[`phase7:${id}`]) || 0;
+  const savedProgress = Number(state.phase4.bossProgress[progressId]) || 0;
+  state.phase4.bossProgress[progressId] = savedProgress >= boss.hp
+    ? 0
+    : Math.max(0, savedProgress);
 
   addLog(`👑 「${boss.name}」への新世界ボス戦を開始した。`);
 }
