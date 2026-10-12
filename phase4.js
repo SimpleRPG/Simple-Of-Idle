@@ -640,13 +640,18 @@ function phase4RaidStart(id) {
     return;
   }
 
+  // 旧版セーブは制圧済みでも最大HPを保持しているため、再挑戦前に正規化する。
+  const savedProgress = Number(state.phase4.raidProgress[id]) || 0;
+  state.phase4.raidProgress[id] = savedProgress >= raid.hp
+    ? 0
+    : Math.max(0, savedProgress);
+
   state.phase4.mode = "raid";
   state.phase4.activeActivity = {
     type: "raid",
     id,
     startedAt: Date.now()
   };
-  state.phase4.raidProgress[id] = Number(state.phase4.raidProgress[id]) || 0;
   addLog(`レイド「${raid.name}」を開始した。`);
   saveState();
   phase4Render();
@@ -789,6 +794,10 @@ function phase4ProcessOffline() {
   const elapsed = Math.max(0, (now - previous) / 1000);
   const capped = Math.min(elapsed, 12 * 60 * 60);
 
+  // 発見処理はphase4Render()を再度呼ぶため、副作用より先に時間を確定する。
+  // これにより同じオフライン区間の研究・活動・イベント処理を再入時に二重適用しない。
+  state.phase4.lastProcessedAt = now;
+
   if (capped > 0) {
     phase4ProcessResearch(capped);
     phase4ProcessActivity(capped);
@@ -798,8 +807,6 @@ function phase4ProcessOffline() {
       phase4RollRandomEvent();
     }
   }
-
-  state.phase4.lastProcessedAt = now;
 }
 
 function phase4PatchBattle() {
