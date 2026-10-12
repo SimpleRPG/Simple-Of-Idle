@@ -174,9 +174,10 @@ function phase5EnsureState() {
 function phase5RestoreDefeatedBossRecords() {
   phase5EnsureState();
 
+  const phase4DefeatIds =
+    Array.isArray(state.phase4?.defeatedBosses) ? state.phase4.defeatedBosses : [];
   const defeatedPhase4 = new Set(
-    (Array.isArray(state.phase4?.defeatedBosses) ? state.phase4.defeatedBosses : [])
-      .filter(id => typeof id === "string" && !id.startsWith("phase7:"))
+    phase4DefeatIds.filter(id => typeof id === "string" && !id.startsWith("phase7:"))
   );
   const defeatedPhase7 = new Set(
     Array.isArray(state.phase7?.defeatedBosses) ? state.phase7.defeatedBosses : []
@@ -187,6 +188,20 @@ function phase5RestoreDefeatedBossRecords() {
   const phase7BossIds = new Set(
     typeof PHASE7_BOSSES !== "undefined" ? PHASE7_BOSSES.map(boss => boss.id) : []
   );
+
+  // Phase 4側のmirror記録しか残っていない場合も、既知のPhase 7ボスIDだけを正規化して補完する。
+  phase4DefeatIds.forEach(id => {
+    if (typeof id !== "string" || !id.startsWith("phase7:")) return;
+    const phase7Id = id.slice("phase7:".length);
+    if (!phase7BossIds.has(phase7Id)) return;
+
+    if (!state.phase7 || typeof state.phase7 !== "object") state.phase7 = {};
+    if (!Array.isArray(state.phase7.defeatedBosses)) state.phase7.defeatedBosses = [];
+    if (!state.phase7.defeatedBosses.includes(phase7Id)) {
+      state.phase7.defeatedBosses.push(phase7Id);
+    }
+    defeatedPhase7.add(phase7Id);
+  });
 
   const restore = id => {
     if (!PHASE5_MONSTERS.some(monster => monster.id === id)) return;
